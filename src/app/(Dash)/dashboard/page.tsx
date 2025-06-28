@@ -286,10 +286,10 @@ const OrderStatusPieChart: FC<{
         {data.map((entry) => (
           <div key={entry.name} className="flex items-center text-sm">
             <span
-              className="w-3 h-3 rounded-full mr-2"
+              className="w-3  h-3 rounded-full mr-2"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="font-medium">{entry.name}</span>
+            <span className="font-medium mr-2">{entry.name}</span>
             <span className="ml-auto font-semibold">{entry.value}</span>
           </div>
         ))}
@@ -560,11 +560,12 @@ const DashboardPage: FC = () => {
               change={stats.newCustomers.change}
             />
           </div>
+          <AiSuggestions />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <OrderStatusPieChart data={ORDER_STATUS_DATA} />
             <MostSoldItems items={MOST_SOLD_ITEMS} />
           </div>
-          <AiSuggestions />
+
           <div className="grid grid-cols-1">
             <HourlyRevenueChart data={HOURLY_REVENUE_DATA} />
           </div>
