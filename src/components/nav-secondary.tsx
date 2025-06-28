@@ -32,7 +32,10 @@ export function NavSecondary({
           {items.map((item) => {
             const isActive = pathname.startsWith(item.url);
             return (
-              <SidebarMenuItem key={item.title} className={isActive ? "active" : ""}>
+              <SidebarMenuItem
+                key={item.title}
+                className={isActive ? "active" : ""}
+              >
                 <SidebarMenuButton asChild>
                   <Link
                     href={item.url}
@@ -42,8 +45,12 @@ export function NavSecondary({
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <item.icon className="size-4" />
-                    <span>{item.title}</span>
+                    <div className="flex items-center gap-2 w-full">
+                      <item.icon className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm leading-none text-foreground">
+                        {item.title}
+                      </span>
+                    </div>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
