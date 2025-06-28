@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import React, { useState, useEffect, FC } from "react";
 import {
@@ -299,23 +300,24 @@ const OrderStatusPieChart: FC<{
 );
 
 const AiSuggestions: FC = () => (
-  <div className="border dark:border-neutral-800 rounded-xl p-6 bg-neutral-900 overflow-hidden relative">
+  <div className="border dark:border-neutral-800 rounded-xl p-6 dark:bg-neutral-900  overflow-hidden relative">
     <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_rgba(139,92,246,0.1)_0%,_transparent_50%)] animate-pulse"></div>
     <div className="relative z-10">
       <div className="flex items-center mb-4">
-        <BrainCircuit className="h-6 w-6 text-purple-400 mr-3" />
-        <h3 className="font-semibold text-lg text-purple-300">
-          Sentient AI - v2.5 Insights
+        <BrainCircuit className="h-6 w-6 text-purple-500 dark:text-purple-400 mr-3" />
+        <h3 className="font-semibold text-lg text-purple-600 dark:text-purple-400">
+          Hungrr AI - Insights
         </h3>
       </div>
-      <div className="font-mono text-sm text-neutral-400 space-y-2">
+      <div className="font-mono text-sm  space-y-2">
         <p>
           <span className="text-green-400">&gt; Observation:</span> Peak revenue
           between 3-4 PM.
         </p>
         <p>
-          <span className="text-yellow-400">&gt; Recommendation:</span>{" "}
-          Introduce 'Happy Hour' discount from 5-6 PM to boost late sales.
+          <span className="text-yellow-500">&gt; Recommendation:</span>{" "}
+          Introduce &apos;Happy Hour&apos; discount from 5-6 PM to boost late
+          sales.
         </p>
       </div>
     </div>
