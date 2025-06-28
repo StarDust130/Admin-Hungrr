@@ -322,6 +322,9 @@ const AiSuggestions: FC = () => (
   </div>
 );
 
+
+
+
 const LiveOrders: FC<{
   orders: Order[];
   setOrders: (orders: Order[]) => void;
@@ -355,20 +358,17 @@ const LiveOrders: FC<{
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -50 }}
-                className="rounded-xl border dark:border-neutral-800 p-4 bg-muted/20 shadow-sm transition hover:shadow-md"
+                className={`rounded-xl border transition-shadow hover:shadow-md p-4 border-${statusInfo.color}-500/50`}
               >
-                {/* Order Info */}
-                <div className="flex justify-between items-start">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-1">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-muted-foreground">
-                      Table:{" "}
+                    <p className="text-sm font-bold">
+                      Table{" "}
                       <span className="text-foreground">{order.table}</span>
                     </p>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Order ID:{" "}
-                      <span className="text-foreground">{order.id}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
+                    <p className="text-xs font-bold">Order ID: {order.id}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1 italic">
                       {order.items}
                     </p>
                   </div>
@@ -380,20 +380,26 @@ const LiveOrders: FC<{
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <div className="flex flex-col sm:flex-row gap-3 mt-4">
                   <Select
                     onValueChange={(value: OrderStatus) =>
                       handleStatusChange(order.id, value)
                     }
                     defaultValue={order.status}
                   >
-                    <SelectTrigger className="h-9 text-sm w-full sm:w-[160px]">
-                      <SelectValue />
+                    <SelectTrigger
+                      className={`h-9 text-sm w-full sm:w-[180px] rounded-md border border-${statusInfo.color}-500 text-${statusInfo.color}-700 hover:shadow-sm transition`}
+                    >
+                      <SelectValue placeholder="Update Status" />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(ORDER_STATUS_CONFIG).map(
-                        ([status, { label }]) => (
-                          <SelectItem key={status} value={status}>
+                        ([status, { label, color }]) => (
+                          <SelectItem
+                            key={status}
+                            value={status}
+                            className={`text-${color}-600`}
+                          >
                             {label}
                           </SelectItem>
                         )
@@ -404,10 +410,10 @@ const LiveOrders: FC<{
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <button
-                        className={`h-9 text-sm w-full sm:w-[160px] rounded-md border font-medium flex items-center justify-center gap-2 transition ${
+                        className={`h-9 text-sm w-full sm:w-[180px] rounded-md border flex items-center justify-center gap-2 transition font-semibold ${
                           order.paid
-                            ? "bg-green-100 text-green-600 border-green-200 dark:bg-green-900/20"
-                            : "bg-background text-muted-foreground border-neutral-400 dark:border-neutral-700"
+                            ? "border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                            : "border-neutral-400 text-muted-foreground hover:bg-accent/20"
                         }`}
                       >
                         <CheckCircle className="w-4 h-4" />
@@ -443,6 +449,7 @@ const LiveOrders: FC<{
     </div>
   );
 };
+
 
 const MostSoldItems: FC<{
   items: { name: string; count: number; icon: React.ElementType }[];
