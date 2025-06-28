@@ -56,6 +56,11 @@ const data = {
       url: "/analytics",
       icon: IconChartBar,
     },
+    {
+      title: "Cafe",
+      url: "/cafe",
+      icon: IconCoffee,
+    },
   ],
   navSecondary: [
     {
