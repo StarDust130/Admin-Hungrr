@@ -8,7 +8,6 @@ import {
   IconChartBar,
   IconSettings,
   IconHelp,
-  IconSearch,
   IconChartPie,
   IconCoffee,
 } from "@tabler/icons-react";
@@ -64,19 +63,14 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Settings",
-      url: "/settings",
-      icon: IconSettings,
-    },
-    {
       title: "Get Help",
       url: "/help",
       icon: IconHelp,
     },
     {
-      title: "Search",
-      url: "/search",
-      icon: IconSearch,
+      title: "Settings",
+      url: "/settings",
+      icon: IconSettings,
     },
   ],
   documents: [
