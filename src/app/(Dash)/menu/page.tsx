@@ -1,27 +1,37 @@
+// app/(dashboard)/menu/page.tsx
 "use client";
+
 import React, { useState, useEffect, FC, FormEvent, useCallback } from "react";
 import {
-  Utensils,
+  MoreHorizontal,
   PlusCircle,
-  MoreVertical,
-  Edit,
+  Pencil,
   Trash2,
-  Tag,
+  Tag as TagIcon,
   Loader2,
-  XCircle,
+  X,
   LayoutGrid,
-  Save,
   List,
   Search,
-  Image as ImageIcon,
+  AlertTriangle,
+  Coffee,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  PackageOpen,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useDebounce } from "use-debounce";
+
+// --- SHADCN/UI COMPONENT IMPORTS ---
+import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,20 +41,31 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -52,8 +73,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 
-// --- TYPE DEFINITIONS (Matching Backend Schema) ---
+// --- TYPE DEFINITIONS (Matching your Prisma Schema) ---
 interface Category {
   id: number;
   name: string;
@@ -65,440 +89,307 @@ interface MenuItem {
   name: string;
   description: string;
   price: string;
-  food_image_url: string; // Matches backend
-  is_available: boolean; // Matches backend
+  food_image_url: string;
+  is_available: boolean;
+  isSpecial: boolean;
+  tags: string[];
   categoryId: number;
   cafeId: number;
 }
 
-type MenuFormData = Omit<MenuItem, "id" | "cafeId" | "is_active">;
-type CategoryFormData = Omit<Category, "id" | "cafeId">;
 type ViewMode = "grid" | "list";
 
 // --- API HELPER ---
 const API_BASE_URL = "http://localhost:5000/api/admin";
 
-// --- UI COMPONENTS ---
+// --- NEW: HELPER FOR COLORFUL TAGS ---
+const tagColorClasses = [
+  "border-transparent bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300 hover:bg-sky-200/80",
+  "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 hover:bg-amber-200/80",
+  "border-transparent bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-300 hover:bg-violet-200/80",
+  "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 hover:bg-emerald-200/80",
+  "border-transparent bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300 hover:bg-rose-200/80",
+  "border-transparent bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300 hover:bg-indigo-200/80",
+];
+
+const getTagColor = (tag: string) => {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return tagColorClasses[Math.abs(hash % tagColorClasses.length)];
+};
+
+// --- CHILD COMPONENTS ---
 
 const MenuCard: FC<{
   item: MenuItem;
-  onToggleAvailability: (id: number, currentStatus: boolean) => void;
+  onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
-}> = ({ item, onToggleAvailability, onEdit, onDelete }) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    exit={{ opacity: 0, scale: 0.9 }}
-    transition={{ duration: 0.3 }}
-    className="border dark:border-neutral-800 rounded-xl overflow-hidden group flex flex-col"
-  >
-    <div className="relative">
+}> = ({ item, onToggle, onEdit, onDelete }) => (
+  <div className="rounded-2xl border bg-background shadow-sm hover:shadow-md transition overflow-hidden flex flex-col h-full">
+    {/* Image */}
+    <div className="relative w-full aspect-[4/3] bg-muted">
       <img
         src={
           item.food_image_url ||
-          "https://placehold.co/600x400/27272a/a1a1aa?text=No+Image"
+          `https://placehold.co/400x300/171717/ffffff?text=${encodeURIComponent(
+            item.name
+          )}`
         }
         alt={item.name}
-        className="w-full h-48 object-cover"
+        className="h-50 w-full object-cover"
       />
-      <div
-        className={`absolute top-3 right-3 px-2 py-1 text-xs font-semibold rounded-full border backdrop-blur-sm ${
-          item.is_available
-            ? "bg-green-500/20 text-green-300 border-green-500/30"
-            : "bg-red-500/20 text-red-300 border-red-500/30"
-        }`}
-      >
-        {item.is_available ? "Available" : "Unavailable"}
-      </div>
+      {item.isSpecial && (
+        <Badge className="absolute top-2 left-2 bg-yellow-400 text-yellow-950 text-[10px] px-2 py-0.5 rounded-full shadow">
+          <Star className="w-3 h-3 mr-1" /> Special
+        </Badge>
+      )}
     </div>
-    <div className="p-4 flex flex-col flex-grow">
-      <div className="flex justify-between items-start">
-        <h3 className="font-bold text-lg">{item.name}</h3>
-        <p className="font-semibold text-lg">
-          ${parseFloat(item.price).toFixed(2)}
-        </p>
-      </div>
-      <p className="text-sm text-muted-foreground mt-1 flex-grow">
-        {item.description}
-      </p>
-      <div className="flex justify-between items-center mt-4 pt-4 border-t dark:border-neutral-800">
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={item.is_available}
-            onCheckedChange={() =>
-              onToggleAvailability(item.id, item.is_available)
-            }
-            aria-label="Toggle Availability"
-          />
-          <label className="text-xs text-muted-foreground">Live</label>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onEdit}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="text-red-500">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  </motion.div>
-);
 
-const MenuListItem: FC<{
-  item: MenuItem;
-  onToggleAvailability: (id: number, currentStatus: boolean) => void;
-  onEdit: () => void;
-  onDelete: () => void;
-}> = ({ item, onToggleAvailability, onEdit, onDelete }) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -20 }}
-    transition={{ duration: 0.3 }}
-    className="flex items-center p-2 border-b dark:border-neutral-800 hover:bg-muted/50"
-  >
-    <img
-      src={
-        item.food_image_url ||
-        "https://placehold.co/100x100/27272a/a1a1aa?text=N/A"
-      }
-      alt={item.name}
-      className="w-12 h-12 object-cover rounded-md mr-4"
-    />
-    <div className="flex-grow">
-      <p className="font-semibold">{item.name}</p>
-      <p className="text-sm text-muted-foreground">
-        ${parseFloat(item.price).toFixed(2)}
-      </p>
-    </div>
-    <div className="hidden md:flex w-32 text-center items-center justify-center">
-      <div className="flex items-center space-x-2">
-        <Switch
-          checked={item.is_available}
-          onCheckedChange={() =>
-            onToggleAvailability(item.id, item.is_available)
-          }
-        />
-        <span
-          className={`text-xs font-semibold ${
-            item.is_available ? "text-green-500" : "text-red-500"
-          }`}
-        >
-          {item.is_available ? "Live" : "Hidden"}
-        </span>
+    {/* Title + Price + Tags */}
+    <div className="p-3 border-t flex-1 flex flex-col justify-between">
+      <div>
+        <div className="flex justify-between items-start">
+          <h3 className="text-sm font-medium text-foreground line-clamp-2">
+            {item.name}
+          </h3>
+          <span className="text-sm font-semibold text-primary whitespace-nowrap">
+            ₹{parseFloat(item.price).toFixed(2)}
+          </span>
+        </div>
+
+        {item.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {item.tags.slice(0, 3).map((tag) => (
+              <Badge
+                key={tag}
+                className={`text-[10px] px-2 py-0.5 rounded-full ${getTagColor(
+                  tag
+                )}`}
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
     </div>
-    <div className="w-16 text-right">
+
+    {/* Footer */}
+    <div className="p-3 border-t bg-muted/40 flex items-center justify-between">
+      <Switch
+        id={`toggle-${item.id}`}
+        checked={item.is_available}
+        onCheckedChange={onToggle}
+      />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreVertical className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-7 w-7">
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-36">
           <DropdownMenuItem onClick={onEdit}>
-            <Edit className="mr-2 h-4 w-4" />
+            <Pencil className="h-4 w-4 mr-2" />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onDelete} className="text-red-500">
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+          <DropdownMenuItem
+            onClick={onDelete}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Deactivate
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
-  </motion.div>
+  </div>
 );
 
-const CategorySidebar: FC<{
-  categories: Category[];
-  activeCategory: number | null;
-  setActiveCategory: (id: number | null) => void;
-  onAddCategory: () => void;
-  onEditCategory: (cat: Category) => void;
-  onDeleteCategory: (id: number) => void;
-  menuItems: MenuItem[];
-}> = ({
-  categories,
-  activeCategory,
-  setActiveCategory,
-  onAddCategory,
-  onEditCategory,
-  onDeleteCategory,
-  menuItems,
-}) => (
-  <aside className="w-full md:w-64 lg:w-72 flex-shrink-0">
-    <div className="sticky top-20 space-y-4">
-      <div className="flex justify-between items-center px-4">
-        <h2 className="text-xl font-bold">Categories</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={onAddCategory}
-        >
-          <PlusCircle className="h-5 w-5" />
-        </Button>
+
+
+const MenuListItem: FC<{
+  item: MenuItem;
+  onToggle: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}> = ({ item, onToggle, onEdit, onDelete }) => (
+  <TableRow>
+    <TableCell>
+      <div className="flex items-center gap-4">
+        <img
+          src={item.food_image_url || `https://placehold.co/100x100?text=N/A`}
+          alt={item.name}
+          className="w-10 h-10 object-cover rounded-md"
+        />
+        <div className="font-medium">{item.name}</div>
+        {item.isSpecial && (
+          <Badge variant="outline" className="text-amber-600 border-amber-500">
+            <Star className="h-3 w-3 mr-1" /> Special
+          </Badge>
+        )}
       </div>
-      <div className="space-y-1 pr-4">
-        <button
-          onClick={() => setActiveCategory(null)}
-          className={`w-full flex items-center justify-between space-x-3 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-            activeCategory === null
-              ? "bg-primary text-primary-foreground"
-              : "hover:bg-muted"
-          }`}
-        >
-          <div className="flex items-center space-x-3">
-            <LayoutGrid className="h-5 w-5" />
-            <span>All Items</span>
-          </div>
-          <span className="text-xs font-mono px-1.5 py-0.5 rounded-full bg-muted-foreground/20">
-            {menuItems.length}
-          </span>
-        </button>
-        {categories.map((cat) => (
-          <div key={cat.id} className="group flex items-center">
-            <button
-              onClick={() => setActiveCategory(cat.id)}
-              className={`w-full flex items-center justify-between space-x-3 pl-4 pr-2 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                activeCategory === cat.id
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <Tag className="h-5 w-5" />
-                <span>{cat.name}</span>
-              </div>
-              <span className="text-xs font-mono px-1.5 py-0.5 rounded-full bg-muted-foreground/20">
-                {menuItems.filter((i) => i.categoryId === cat.id).length}
-              </span>
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEditCategory(cat)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onDeleteCategory(cat.id)}
-                  className="text-red-500"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+    </TableCell>
+    <TableCell>${parseFloat(item.price).toFixed(2)}</TableCell>
+    <TableCell>
+      <div className="flex flex-wrap gap-1">
+        {item.tags?.slice(0, 4).map((tag) => (
+          <Badge key={tag} className={getTagColor(tag)}>
+            {tag}
+          </Badge>
         ))}
       </div>
-    </div>
-  </aside>
+    </TableCell>
+    <TableCell>
+      <Badge variant={item.is_available ? "default" : "destructive"}>
+        {item.is_available ? "Live" : "Hidden"}
+      </Badge>
+    </TableCell>
+    <TableCell>
+      <Switch checked={item.is_available} onCheckedChange={onToggle} />
+    </TableCell>
+    <TableCell className="text-right">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onEdit}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit Details
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={onDelete}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Deactivate
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </TableCell>
+  </TableRow>
 );
-
-const FormDialog: FC<{
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  title: string;
-  description: string;
-  initialData: any;
-  onSave: (data: any) => void;
-  children: (
-    formData: any,
-    setFormData: (data: any) => void
-  ) => React.ReactNode;
-}> = ({
-  isOpen,
-  setIsOpen,
-  title,
-  description,
-  initialData,
-  onSave,
-  children,
-}) => {
-  const [formData, setFormData] = useState(initialData);
-
-  useEffect(() => {
-    if (isOpen) {
-      setFormData(initialData);
-    }
-  }, [initialData, isOpen]);
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {children(formData, setFormData)}
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setIsOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">
-              <Save className="mr-2 h-4 w-4" />
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 // --- MAIN PAGE COMPONENT ---
 const MenuPage: FC = () => {
+  // (State and API logic remains the same as the previous correct version)
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState({ categories: true, menu: true });
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
+  const [pageInfo, setPageInfo] = useState({ currentPage: 1, totalPages: 1 });
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
-
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
 
-  const cafeId = 1; // This should be dynamic in a real app
+  const cafeId = 1;
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+  // --- API LOGIC ---
+  const fetchMenuItems = useCallback(
+    async (
+      page = 1,
+      categoryId = activeCategoryId,
+      search = debouncedSearchQuery
+    ) => {
+      setLoading(true);
+      setError(null);
+      const params = new URLSearchParams({ page: String(page), limit: "10" });
+      if (search) params.append("search", search);
+      if (categoryId) params.append("categoryId", String(categoryId));
+
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/menu/cafe/${cafeId}?${params.toString()}`
+        );
+        if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+        const data = await res.json();
+        setMenuItems(data.items || []);
+        setPageInfo(data.pageInfo || { currentPage: 1, totalPages: 1 });
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "An unknown error occurred while fetching menu items."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [cafeId, activeCategoryId, debouncedSearchQuery]
+  );
 
   const fetchCategories = useCallback(async () => {
-    setLoading((prev) => ({ ...prev, categories: true }));
     try {
-      const response = await fetch(`${API_BASE_URL}/category/cafe/${cafeId}`);
-      if (!response.ok) throw new Error("Failed to fetch categories");
-      const data = await response.json();
+      const res = await fetch(`${API_BASE_URL}/category/cafe/${cafeId}`);
+      if (!res.ok) throw new Error("Could not fetch categories");
+      const data = await res.json();
       setCategories(data.categories || []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
       console.error(err);
-    } finally {
-      setLoading((prev) => ({ ...prev, categories: false }));
+      setError(
+        "Could not load categories. Some features might be unavailable."
+      );
     }
   }, [cafeId]);
-
-  const fetchMenuItems = useCallback(async () => {
-    setLoading((prev) => ({ ...prev, menu: true }));
-    try {
-      const params = new URLSearchParams();
-      if (activeCategory) {
-        params.append("categoryId", String(activeCategory));
-      }
-      if (debouncedSearchQuery) {
-        params.append("search", debouncedSearchQuery);
-      }
-
-      const response = await fetch(
-        `${API_BASE_URL}/menu/cafe/${cafeId}?${params.toString()}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch menu items");
-      const data = await response.json();
-      setMenuItems(data.items || []);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-      console.error(err);
-    } finally {
-      setLoading((prev) => ({ ...prev, menu: false }));
-    }
-  }, [cafeId, activeCategory, debouncedSearchQuery]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
   useEffect(() => {
-    fetchMenuItems();
-  }, [fetchMenuItems]);
+    // We create a separate function to avoid dependency array complexities with fetchMenuItems
+    const loadData = () => {
+      fetchMenuItems(1, activeCategoryId, debouncedSearchQuery);
+    };
+    loadData();
+  }, [activeCategoryId, debouncedSearchQuery, fetchMenuItems]);
 
-  const onToggleAvailability = async (
-    itemId: number,
-    currentStatus: boolean
-  ) => {
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pageInfo.totalPages) {
+      fetchMenuItems(newPage);
+    }
+  };
+
+  const onToggleAvailability = async (itemId: number) => {
     const originalItems = [...menuItems];
     setMenuItems((prev) =>
       prev.map((item) =>
-        item.id === itemId ? { ...item, is_available: !currentStatus } : item
+        item.id === itemId
+          ? { ...item, is_available: !item.is_available }
+          : item
       )
     );
     try {
       const response = await fetch(
-        `${API_BASE_URL}/menu/${itemId}/toggle-availability`,
+        `${API_BASE_URL}/menu/item/${itemId}/toggle-availability`,
         { method: "PATCH" }
       );
       if (!response.ok) throw new Error("Failed to toggle availability");
     } catch (err) {
-      setMenuItems(originalItems);
-      console.error(err);
+      setMenuItems(originalItems); // Revert on error
+      alert("Failed to update item availability. Please try again.");
     }
   };
 
-  const handleOpenMenuModal = (item: MenuItem | null = null) => {
-    setEditingMenuItem(item);
-    setIsMenuModalOpen(true);
-  };
-
-  const handleSaveMenuItem = async (data: any, id?: number) => {
-    const method = id ? "PATCH" : "POST";
-    const url = id ? `${API_BASE_URL}/menu/${id}` : `${API_BASE_URL}/menu`;
-
-    const payload = {
-      name: data.name,
-      description: data.description,
-      price: String(data.price),
-      food_image_url: data.food_image_url,
-      categoryId: data.categoryId,
-      cafeId,
-    };
+  const handleSaveMenuItem = async (data: Partial<MenuItem>) => {
+    const isEditing = !!data.id;
+    const url = isEditing
+      ? `${API_BASE_URL}/menu/item/${data.id}`
+      : `${API_BASE_URL}/menu/item`;
+    const method = isEditing ? "PATCH" : "POST";
+    const payload = isEditing ? data : { ...data, cafeId };
 
     try {
       const response = await fetch(url, {
@@ -510,150 +401,352 @@ const MenuPage: FC = () => {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to save menu item");
       }
-      await fetchMenuItems();
       setIsMenuModalOpen(false);
+      await fetchMenuItems(pageInfo.currentPage);
     } catch (err) {
-      console.error(err);
       alert(
-        `Failed to save menu item: ${
-          err instanceof Error ? err.message : "Unknown error"
-        }`
+        `Error: ${err instanceof Error ? err.message : "Could not save item."}`
       );
     }
   };
 
   const handleDeleteMenuItem = async () => {
     if (itemToDelete === null) return;
-    const originalItems = [...menuItems];
-    setMenuItems((prev) => prev.filter((item) => item.id !== itemToDelete));
     try {
-      const response = await fetch(`${API_BASE_URL}/menu/${itemToDelete}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete menu item");
+      const response = await fetch(
+        `${API_BASE_URL}/menu/item/${itemToDelete}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) throw new Error("Failed to deactivate menu item");
+      await fetchMenuItems(pageInfo.currentPage);
     } catch (err) {
-      setMenuItems(originalItems);
-      console.error(err);
-      alert("Failed to delete menu item. See console for details.");
+      alert("Failed to deactivate item. See console for details.");
     } finally {
       setItemToDelete(null);
     }
   };
 
-  const handleOpenCategoryModal = (cat: Category | null = null) => {
-    setEditingCategory(cat);
-    setIsCategoryModalOpen(true);
-  };
+  return (
+    <div className="flex flex-col h-full gap-4 p-4 sm:p-6">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Menu Editor</h1>
+          <p className="text-muted-foreground">
+            The central hub for all your culinary creations.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsCategoryModalOpen(true)}
+          >
+            <TagIcon className="mr-2 h-4 w-4" /> Manage Categories
+          </Button>
+          <Button
+            onClick={() => {
+              setEditingMenuItem(null);
+              setIsMenuModalOpen(true);
+            }}
+            disabled={categories.length === 0}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+          </Button>
+        </div>
+      </header>
 
-  const handleSaveCategory = async (data: CategoryFormData) => {
-    const id = editingCategory?.id;
-    const method = id ? "PATCH" : "POST";
-    const url = id
-      ? `${API_BASE_URL}/category/${id}`
-      : `${API_BASE_URL}/category`;
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row items-center gap-2">
+          <div className="relative flex-grow w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by name..."
+              className="pl-8 w-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center self-end md:self-center space-x-1 border p-1 rounded-md bg-muted">
+            <Button
+              variant={viewMode === "grid" ? "background" : "ghost"}
+              size="icon"
+              onClick={() => setViewMode("grid")}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "background" : "ghost"}
+              size="icon"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            variant={activeCategoryId === null ? "default" : "outline"}
+            onClick={() => setActiveCategoryId(null)}
+          >
+            All Categories
+          </Button>
+          {categories.map((cat) => (
+            <Button
+              key={cat.id}
+              size="sm"
+              variant={activeCategoryId === cat.id ? "default" : "outline"}
+              onClick={() => setActiveCategoryId(cat.id)}
+            >
+              {cat.name}
+            </Button>
+          ))}
+        </div>
+      </div>
 
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, cafeId }),
-      });
-      if (!response.ok) throw new Error("Failed to save category");
-      await fetchCategories();
-      setIsCategoryModalOpen(false);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save category. See console for details.");
+      <Separator />
+
+      <main className="flex-1">
+        {loading ? (
+          <div className="flex h-64 justify-center items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="flex h-64 flex-col justify-center items-center text-destructive">
+            <XCircle className="h-12 w-12 mb-4" />
+            <p className="font-semibold text-lg">{error}</p>
+          </div>
+        ) : menuItems.length > 0 ? (
+          viewMode === "grid" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {menuItems.map((item) => (
+                <MenuCard
+                  key={item.id}
+                  item={item}
+                  onToggle={() => onToggleAvailability(item.id)}
+                  onEdit={() => {
+                    setEditingMenuItem(item);
+                    setIsMenuModalOpen(true);
+                  }}
+                  onDelete={() => setItemToDelete(item.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40%]">Item</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Tags</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Live</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {menuItems.map((item) => (
+                    <MenuListItem
+                      key={item.id}
+                      item={item}
+                      onToggle={() => onToggleAvailability(item.id)}
+                      onEdit={() => {
+                        setEditingMenuItem(item);
+                        setIsMenuModalOpen(true);
+                      }}
+                      onDelete={() => setItemToDelete(item.id)}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )
+        ) : (
+          <div className="text-center h-64 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
+            <PackageOpen className="h-12 w-12 mb-4" />
+            <h3 className="text-xl font-semibold">No Items Found</h3>
+            <p>Try adjusting your search or category filters.</p>
+          </div>
+        )}
+      </main>
+
+      {!loading && pageInfo.totalPages > 1 && (
+        <footer className="flex items-center justify-center gap-4 pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(pageInfo.currentPage - 1)}
+            disabled={pageInfo.currentPage <= 1}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          <span className="text-sm font-medium">
+            Page {pageInfo.currentPage} of {pageInfo.totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(pageInfo.currentPage + 1)}
+            disabled={pageInfo.currentPage >= pageInfo.totalPages}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </footer>
+      )}
+
+      {/* --- DIALOGS & ALERTS --- */}
+      {isMenuModalOpen && (
+        <MenuItemFormDialog
+          isOpen={isMenuModalOpen}
+          setIsOpen={setIsMenuModalOpen}
+          initialData={editingMenuItem}
+          categories={categories}
+          onSave={handleSaveMenuItem}
+        />
+      )}
+      {isCategoryModalOpen && (
+        <CategoryManagerDialog
+          isOpen={isCategoryModalOpen}
+          setIsOpen={setIsCategoryModalOpen}
+          cafeId={cafeId}
+          onUpdate={fetchCategories}
+        />
+      )}
+      <AlertDialog
+        open={itemToDelete !== null}
+        onOpenChange={(open) => !open && setItemToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will hide this item from your menu. It will not be
+              permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMenuItem}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+// --- DIALOG COMPONENTS ---
+
+const MenuItemFormDialog: FC<{
+  isOpen: boolean;
+  setIsOpen: (o: boolean) => void;
+  initialData: MenuItem | null;
+  categories: Category[];
+  onSave: (d: Partial<MenuItem>) => Promise<void>;
+}> = ({ isOpen, setIsOpen, initialData, categories, onSave }) => {
+  const [formData, setFormData] = useState<Partial<MenuItem>>(
+    initialData || {}
+  );
+  const [tagInput, setTagInput] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setFormData(
+      initialData || {
+        name: "",
+        price: "0.00",
+        is_available: true,
+        isSpecial: false,
+        tags: [],
+        categoryId: categories[0]?.id,
+      }
+    );
+  }, [initialData, categories, isOpen]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const newTag = tagInput.trim();
+      if (newTag && !formData.tags?.includes(newTag)) {
+        setFormData((prev) => ({
+          ...prev,
+          tags: [...(prev.tags || []), newTag],
+        }));
+      }
+      setTagInput("");
     }
   };
 
-  const handleDeleteCategory = async () => {
-    if (categoryToDelete === null) return;
-    const originalCategories = [...categories];
-    setCategories((prev) => prev.filter((cat) => cat.id !== categoryToDelete));
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/category/${categoryToDelete}`,
-        { method: "DELETE" }
-      );
-      if (!response.ok) throw new Error("Failed to delete category");
-      await fetchMenuItems();
-    } catch (err) {
-      setCategories(originalCategories);
-      console.error(err);
-      alert("Failed to delete category. See console for details.");
-    } finally {
-      setCategoryToDelete(null);
-    }
+  const removeTag = (tagToRemove: string) =>
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags?.filter((tag) => tag !== tagToRemove),
+    }));
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    await onSave(formData);
+    setIsSaving(false);
   };
 
   return (
-    <div className="mx-auto w-full">
-      <FormDialog
-        isOpen={isMenuModalOpen}
-        setIsOpen={setIsMenuModalOpen}
-        title={editingMenuItem ? "Edit Menu Item" : "Add New Menu Item"}
-        description="Fill in the details for your menu item."
-        initialData={
-          editingMenuItem
-            ? {
-                name: editingMenuItem.name,
-                description: editingMenuItem.description,
-                price: editingMenuItem.price,
-                food_image_url: editingMenuItem.food_image_url,
-                is_available: editingMenuItem.is_available,
-                categoryId: editingMenuItem.categoryId,
-              }
-            : {
-                name: "",
-                description: "",
-                price: "",
-                food_image_url: "",
-                is_available: true,
-                categoryId: categories[0]?.id || 0,
-              }
-        }
-        onSave={(data) => handleSaveMenuItem(data, editingMenuItem?.id)}
-      >
-        {(formData, setFormData) => (
-          <>
-            <Input
-              placeholder="Item Name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              required
-            />
-            <Textarea
-              placeholder="Description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-            />
-            <Input
-              type="number"
-              placeholder="Price"
-              value={formData.price}
-              onChange={(e) =>
-                setFormData({ ...formData, price: e.target.value })
-              }
-              required
-              step="0.01"
-            />
-            <Input
-              placeholder="Image URL"
-              value={formData.food_image_url}
-              onChange={(e) =>
-                setFormData({ ...formData, food_image_url: e.target.value })
-              }
-            />
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {initialData ? "Edit Menu Item" : "Create New Item"}
+          </DialogTitle>
+          <DialogDescription>
+            Fill in the details for your menu item.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="name">Name</label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name || ""}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="price">Price</label>
+              <Input
+                id="price"
+                name="price"
+                type="number"
+                step="0.01"
+                value={formData.price || ""}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="categoryId">Category</label>
             <Select
-              onValueChange={(value) =>
-                setFormData({ ...formData, categoryId: Number(value) })
+              onValueChange={(val) =>
+                setFormData((p) => ({ ...p, categoryId: Number(val) }))
               }
               value={String(formData.categoryId)}
+              required
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a category" />
@@ -666,211 +759,217 @@ const MenuPage: FC = () => {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="availability"
-                checked={formData.is_available}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, is_available: checked })
-                }
-              />
-              <label htmlFor="availability">Available for purchase</label>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="description">Description</label>
+            <Textarea
+              id="description"
+              name="description"
+              value={formData.description || ""}
+              onChange={handleChange}
+              placeholder="(Optional) A brief description of the item."
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="food_image_url">Image URL</label>
+            <Input
+              id="food_image_url"
+              name="food_image_url"
+              value={formData.food_image_url || ""}
+              onChange={handleChange}
+              placeholder="(Optional) e.g., https://..."
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="tags">Tags</label>
+            <div className="flex flex-wrap gap-2">
+              {formData.tags?.map((tag) => (
+                <Badge key={tag} className={getTagColor(tag)}>
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="ml-1.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
             </div>
-          </>
-        )}
-      </FormDialog>
-
-      <FormDialog
-        isOpen={isCategoryModalOpen}
-        setIsOpen={setIsCategoryModalOpen}
-        title={editingCategory ? "Edit Category" : "Add New Category"}
-        description="Enter the name for the category."
-        initialData={editingCategory || { name: "" }}
-        onSave={handleSaveCategory}
-      >
-        {(formData, setFormData) => (
-          <Input
-            placeholder="Category Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
-        )}
-      </FormDialog>
-
-      <AlertDialog
-        open={itemToDelete !== null}
-        onOpenChange={(open) => !open && setItemToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Menu Item?</AlertDialogTitle>
-          </AlertDialogHeader>
-          <AlertDialogDescription>
-            This action will mark the item as inactive but it will remain in
-            your records.
-          </AlertDialogDescription>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteMenuItem}
-              className="bg-red-500 hover:bg-red-600"
+            <Input
+              id="tags"
+              placeholder="Add a tag and press Enter..."
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagInputKeyDown}
+            />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="space-y-0.5">
+              <label htmlFor="isSpecial">Mark as Special</label>
+              <p className="text-xs text-muted-foreground">
+                Special items are highlighted in the menu.
+              </p>
+            </div>
+            <Switch
+              id="isSpecial"
+              checked={formData.isSpecial}
+              onCheckedChange={(c) =>
+                setFormData((p) => ({ ...p, isSpecial: c }))
+              }
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={isSaving}
             >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{" "}
+              Save
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const CategoryManagerDialog: FC<{
+  isOpen: boolean;
+  setIsOpen: (o: boolean) => void;
+  cafeId: number;
+  onUpdate: () => void;
+}> = ({ isOpen, setIsOpen, cafeId, onUpdate }) => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchCats = async () => {
+        setIsLoading(true);
+        const res = await fetch(`${API_BASE_URL}/category/cafe/${cafeId}`);
+        const data = await res.json();
+        setCategories(data.categories || []);
+        setIsLoading(false);
+      };
+      fetchCats();
+    }
+  }, [isOpen, cafeId]);
+
+  const handleCreate = async () => {
+    if (!newCategoryName.trim()) return;
+    await fetch(`${API_BASE_URL}/category`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newCategoryName, cafeId }),
+    });
+    setNewCategoryName("");
+    onUpdate(); // Refetch categories on the main page
+    const res = await fetch(`${API_BASE_URL}/category/cafe/${cafeId}`);
+    const data = await res.json();
+    setCategories(data.categories || []);
+  };
+
+  const handleDelete = async () => {
+    if (!categoryToDelete) return;
+    await fetch(`${API_BASE_URL}/category/${categoryToDelete.id}`, {
+      method: "DELETE",
+    });
+    setCategories((prev) => prev.filter((c) => c.id !== categoryToDelete.id));
+    setCategoryToDelete(null);
+    onUpdate(); // Refetch categories on the main page
+  };
+
+  return (
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Categories</DialogTitle>
+            <DialogDescription>
+              Add or remove your menu categories.
+            </DialogDescription>
+          </DialogHeader>
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-2 py-4 max-h-[300px] overflow-y-auto">
+              {categories.map((cat) => (
+                <div
+                  key={cat.id}
+                  className="flex items-center gap-2 p-2 rounded-md hover:bg-muted"
+                >
+                  <p className="flex-grow">{cat.name}</p>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setCategoryToDelete(cat)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter className="pt-4 border-t">
+            <div className="flex w-full gap-2">
+              <Input
+                placeholder="New category name..."
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              />
+              <Button onClick={handleCreate}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
-        open={categoryToDelete !== null}
+        open={!!categoryToDelete}
         onOpenChange={(open) => !open && setCategoryToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category?</AlertDialogTitle>
+            <AlertDialogTitle className="text-destructive">
+              DANGER: Are you absolutely sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action is irreversible. Deleting the category{" "}
+              <span className="font-bold">"{categoryToDelete?.name}"</span> will
+              also{" "}
+              <span className="font-bold text-destructive">
+                PERMANENTLY DELETE
+              </span>{" "}
+              all menu items within it.
+            </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogDescription>
-            This will permanently delete the category and all its menu items.
-            This action cannot be undone.
-          </AlertDialogDescription>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteCategory}
-              className="bg-red-500 hover:bg-red-600"
+              onClick={handleDelete}
+              className="bg-destructive hover:bg-destructive/90"
             >
-              Delete
+              Yes, Delete Everything
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <header className="mb-8">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Menu Management
-            </h1>
-            <p className="text-muted-foreground">
-              Organize categories and manage your delicious offerings.
-            </p>
-          </div>
-          <Button
-            size="lg"
-            onClick={() => handleOpenMenuModal()}
-            disabled={categories.length === 0}
-          >
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Add New Menu Item
-          </Button>
-        </div>
-      </header>
-
-      <div className="flex flex-col md:flex-row gap-8">
-        <CategorySidebar
-          categories={categories}
-          activeCategory={activeCategory}
-          setActiveCategory={setActiveCategory}
-          onAddCategory={() => handleOpenCategoryModal()}
-          onEditCategory={handleOpenCategoryModal}
-          onDeleteCategory={setCategoryToDelete}
-          menuItems={menuItems}
-        />
-
-        <main className="flex-1">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-            <div className="relative w-full sm:max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search menu items..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center space-x-1 bg-muted p-1 rounded-lg">
-              <Button
-                variant={viewMode === "grid" ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("grid")}
-              >
-                <LayoutGrid className="h-5 w-5" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("list")}
-              >
-                <List className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-
-          {loading.menu || loading.categories ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : error ? (
-            <div className="text-center py-16 border-2 border-dashed dark:border-neutral-800 rounded-xl flex flex-col items-center">
-              <XCircle className="h-12 w-12 text-red-500 mb-4" />
-              <p className="font-semibold text-lg">Failed to load menu</p>
-              <p className="text-muted-foreground text-sm mt-1">{error}</p>
-            </div>
-          ) : (
-            <AnimatePresence>
-              {viewMode === "grid" ? (
-                <motion.div
-                  layout
-                  className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
-                >
-                  {menuItems.map((item) => (
-                    <MenuCard
-                      key={item.id}
-                      item={item}
-                      onToggleAvailability={onToggleAvailability}
-                      onEdit={() => handleOpenMenuModal(item)}
-                      onDelete={() => setItemToDelete(item.id)}
-                    />
-                  ))}
-                </motion.div>
-              ) : (
-                <motion.div
-                  layout
-                  className="border dark:border-neutral-800 rounded-xl"
-                >
-                  <div className="hidden md:flex items-center p-2 border-b dark:border-neutral-800 bg-muted/50 font-semibold text-sm text-muted-foreground">
-                    <div className="w-12 mr-4"></div> {/* Image placeholder */}
-                    <div className="flex-grow">Item</div>
-                    <div className="w-24 text-center">Toggle</div>
-                    <div className="w-24 text-center">Status</div>
-                    <div className="w-16 text-right pr-2">Actions</div>
-                  </div>
-                  {menuItems.map((item) => (
-                    <MenuListItem
-                      key={item.id}
-                      item={item}
-                      onToggleAvailability={onToggleAvailability}
-                      onEdit={() => handleOpenMenuModal(item)}
-                      onDelete={() => setItemToDelete(item.id)}
-                    />
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          )}
-          {!loading.menu && menuItems.length === 0 && (
-            <div className="text-center py-16 border-2 border-dashed dark:border-neutral-800 rounded-xl flex flex-col items-center">
-              <Utensils className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="font-semibold text-lg">No items found</p>
-              <p className="text-muted-foreground text-sm mt-1">
-                Try adjusting your search or category filters.
-              </p>
-            </div>
-          )}
-        </main>
-      </div>
-    </div>
+    </>
   );
 };
 
