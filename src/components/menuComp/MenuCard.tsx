@@ -14,6 +14,11 @@ import { Switch } from "@/components/ui/switch";
 import { MoreHorizontal, Pencil, Star, Trash2 } from "lucide-react";
 import { MenuItem } from "./menu-types";
 import Image from "next/image";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Helper for colorful tags can be in a separate utils file or here if only used here
 const tagColorClasses = [
@@ -136,9 +141,22 @@ function MenuCardContent({ item, onToggle, onEdit, onDelete }: MenuCardContentPr
           />
           <label
             htmlFor={`toggle-card-${item.id}`}
-            className="text-xs text-muted-foreground"
+            className="text-[11px] text-muted-foreground"
           >
-            {item.is_available ? "Live" : "Hidden"}
+            <Tooltip>
+              <TooltipTrigger>
+                {item.is_available
+                  ? "Visible to customers"
+                  : "Hidden from customers"}
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {item.is_available
+                    ? "This item is shown in the menu."
+                    : "This item is hidden from customers."}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </label>
         </div>
         <DropdownMenu>
