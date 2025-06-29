@@ -1,8 +1,6 @@
-"use client";
-
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Tags, ChefHat, Layers, UtensilsCrossed } from "lucide-react";
+import { Plus, Tags, Layers, UtensilsCrossed, BookX } from "lucide-react";
 import { StatsCards } from "./StatsCards";
 
 type MenuHeaderProps = {
@@ -47,6 +45,15 @@ export function MenuHeader({
             // onClick={}
             className="h-8 text-xs cursor-pointer"
           >
+            <BookX className="w-4 h-4 mr-1" />
+            Unavailable
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            // onClick={}
+            className="h-8 text-xs cursor-pointer"
+          >
             <Tags className="w-4 h-4 mr-1" />
             Tags
           </Button>
@@ -63,7 +70,12 @@ export function MenuHeader({
       </div>
 
       {/* Stats below on mobile, inline on desktop */}
-      <StatsCards totalItems={120} totalCategories={10} deactivatedItems={5} totalTags={4} />
+      <StatsCards
+        totalItems={120}
+        totalCategories={10}
+        deactivatedItems={5}
+        totalTags={4}
+      />
     </header>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, Layers, Eye, EyeOff,  Tags } from "lucide-react";
+import { LayoutGrid, Layers, Eye,  Tags, BookX } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +35,7 @@ export function StatsCards({
     {
       label: "Unavailable",
       value: deactivatedItems,
-      icon: EyeOff,
+      icon: BookX,
       color: "text-red-500",
     },
     {
