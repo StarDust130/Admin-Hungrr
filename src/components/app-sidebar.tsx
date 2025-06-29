@@ -56,14 +56,14 @@ const data = {
       icon: IconChartBar,
     },
     {
-      title: "Cafe",
-      url: "/cafe",
-      icon: IconCoffee,
-    },
-    {
       title: "Feedback",
       url: "/feedback",
       icon: Sticker,
+    },
+    {
+      title: "Cafe",
+      url: "/cafe",
+      icon: IconCoffee,
     },
   ],
   navSecondary: [
