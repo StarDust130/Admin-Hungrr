@@ -22,13 +22,14 @@ import {
 
 // Helper for colorful tags can be in a separate utils file or here if only used here
 const tagColorClasses = [
-  "border-transparent bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300 hover:bg-sky-200/80",
-  "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 hover:bg-amber-200/80",
-  "border-transparent bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-300 hover:bg-violet-200/80",
-  "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 hover:bg-emerald-200/80",
-  "border-transparent bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-300 hover:bg-rose-200/80",
-  "border-transparent bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300 hover:bg-indigo-200/80",
+  "border-transparent bg-sky-100 text-sky-800 dark:bg-sky-600/80 dark:text-white hover:bg-sky-200/80",
+  "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-600/80 dark:text-white hover:bg-amber-200/80",
+  "border-transparent bg-violet-100 text-violet-800 dark:bg-violet-600/80 dark:text-white hover:bg-violet-200/80",
+  "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-600/80 dark:text-white hover:bg-emerald-200/80",
+  "border-transparent bg-rose-100 text-rose-800 dark:bg-rose-600/80 dark:text-white hover:bg-rose-200/80",
+  "border-transparent bg-indigo-100 text-indigo-800 dark:bg-indigo-600/80 dark:text-white hover:bg-indigo-200/80",
 ];
+
 
 const getTagColor = (tag: string) => {
   let hash = 0;
@@ -78,7 +79,7 @@ function MenuCardContent({ item, onToggle, onEdit, onDelete }: MenuCardContentPr
     
   return (
     <div className="rounded-[10px] overflow-hidden border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
-      <div className="relative aspect-[4/3] bg-muted">
+      <div className="relative aspect-[4/3] bg-muted rounded-t-lg overflow-hidden">
         <div className="relative w-full h-[180px]">
           <Image
             width={400}
@@ -88,16 +89,34 @@ function MenuCardContent({ item, onToggle, onEdit, onDelete }: MenuCardContentPr
             className="w-full h-full object-cover"
           />
 
+          {/* 📸 No Image Placeholder */}
           {!item.food_image_url && (
-            <div className="absolute bottom-2 left-15 px-2 py-0.5 bg-neutral-800/70 text-white text-[10px] rounded-sm shadow backdrop-blur-sm">
-              📸 No image yet
+            <div className="absolute bottom-4 left-14 px-2 py-0.5 bg-neutral-800/70 text-white text-[10px] rounded-sm shadow backdrop-blur-sm">
+              📸 No image added
+            </div>
+          )}
+
+          {/* 🏷️ Tags */}
+          {item.tags?.length > 0 && (
+            <div className="absolute top-2 right-2 flex gap-1 flex-wrap">
+              {item.tags.slice(0, 3).map((tag) => (
+                <Badge
+                  key={tag}
+                  className={`text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm ${getTagColor(
+                    tag
+                  )}`}
+                >
+                  {tag}
+                </Badge>
+              ))}
             </div>
           )}
         </div>
 
+        {/* ⭐ Special Badge */}
         {item.isSpecial && (
           <Badge
-            className="absolute top-2 left-2 !bg-amber-400 text-amber-900 shadow"
+            className="absolute bottom-2 left-2 !bg-amber-400 text-amber-900 shadow text-[10px] px-2 py-0.5"
             variant="default"
           >
             <Star className="h-3 w-3 mr-1" /> Special
@@ -115,20 +134,6 @@ function MenuCardContent({ item, onToggle, onEdit, onDelete }: MenuCardContentPr
               ₹{parseFloat(item.price).toFixed(2)}
             </span>
           </div>
-          {item.tags?.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {item.tags.slice(0, 3).map((tag) => (
-                <Badge
-                  key={tag}
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${getTagColor(
-                    tag
-                  )}`}
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
