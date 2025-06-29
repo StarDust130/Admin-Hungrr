@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useDebounce } from "use-debounce";
 import { Separator } from "@/components/ui/separator";
@@ -22,8 +23,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-
 
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -59,7 +58,9 @@ export default function MenuPage() {
 
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/menu/cafe/${cafeId}?${params.toString()}`
+          `${
+            process.env.NEXT_PUBLIC_BACKEND_API_URL
+          }/menu/cafe/${cafeId}?${params.toString()}`
         );
         if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
         const data = await res.json();
