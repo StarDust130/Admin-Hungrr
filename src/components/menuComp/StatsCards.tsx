@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, Layers, Eye,  Tags, BookX } from "lucide-react";
+import { LayoutGrid, Layers, Eye,  Tags, BookX, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -9,12 +9,14 @@ type StatsCardsProps = {
   totalCategories: number;
   deactivatedItems: number;
   totalTags?: number;
+  speacilItems?: number;
 };
 
 export function StatsCards({
   totalItems,
   totalCategories,
   deactivatedItems,
+  speacilItems = 5,
   totalTags = 0,
 }: StatsCardsProps) {
   const activeItems = totalItems - deactivatedItems;
@@ -31,6 +33,12 @@ export function StatsCards({
       value: activeItems,
       icon: Eye,
       color: "text-green-500",
+    },
+    {
+      label: "Speacil Items ",
+      value: speacilItems,
+      icon: Sparkles,
+      color: "text-yellow-500",
     },
     {
       label: "Unavailable",
@@ -56,7 +64,7 @@ export function StatsCards({
   
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {stats.map(({ label, value, icon: Icon, color }) => (
         <Card
           key={label}
