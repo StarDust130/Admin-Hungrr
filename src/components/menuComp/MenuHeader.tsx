@@ -2,6 +2,11 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Tags, Layers, UtensilsCrossed, BookX } from "lucide-react";
 import { StatsCards } from "./StatsCards";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type MenuHeaderProps = {
   onAddItem: () => void;
@@ -29,43 +34,74 @@ export function MenuHeader({
         </div>
 
         {/* Buttons */}
-        <div className="flex flex-wrap gap-2 mt-2 sm:mt-0 ">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onManageCategories}
-            className="h-8 text-xs cursor-pointer"
-          >
-            <Layers className="w-4 h-4 mr-1" />
-            Categories
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            // onClick={}
-            className="h-8 text-xs cursor-pointer"
-          >
-            <BookX className="w-4 h-4 mr-1" />
-            Unavailable
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            // onClick={}
-            className="h-8 text-xs cursor-pointer"
-          >
-            <Tags className="w-4 h-4 mr-1" />
-            Tags
-          </Button>
-          <Button
-            size="sm"
-            onClick={onAddItem}
-            disabled={isAddDisabled}
-            className="h-8 text-xs cursor-pointer"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Item
-          </Button>
+        <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onManageCategories}
+                className="h-8 text-xs cursor-pointer"
+              >
+                <Layers className="w-4 h-4 mr-1" />
+                Categories
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add or edit categories</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                // onClick={}
+                className="h-8 text-xs cursor-pointer"
+              >
+                <BookX className="w-4 h-4 mr-1" />
+                Unavailable
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>View items not shown to customers</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                // onClick={}
+                className="h-8 text-xs cursor-pointer"
+              >
+                <Tags className="w-4 h-4 mr-1" />
+                Tags
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Add or edit tags</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                onClick={onAddItem}
+                disabled={isAddDisabled}
+                className="h-8 text-xs cursor-pointer"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Item
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Create a new menu item</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
