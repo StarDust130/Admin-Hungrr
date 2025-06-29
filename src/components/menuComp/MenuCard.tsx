@@ -84,7 +84,7 @@ function MenuCardContent({ item, onToggle, onEdit, onDelete }: MenuCardContentPr
           <Image
             width={400}
             height={300}
-            src={item.food_image_url ?? "/food_img_placeholder.png"}
+            src={item.food_image_url ?? "/no_food_placeholder.jpg"}
             alt={item.name}
             className="w-full h-full object-cover"
           />
