@@ -12,7 +12,7 @@ import {
 import { Category } from "./menu-types";
 import { Dialog } from "../ui/dialog";
 
-const API_BASE_URL = "http://localhost:5000/api/admin";
+
 
 type CategoryManagerDialogProps = {
   isOpen: boolean;
@@ -38,7 +38,9 @@ export function CategoryManagerDialog({
     if (isOpen) {
       const fetchCats = async () => {
         setIsLoading(true);
-        const res = await fetch(`${API_BASE_URL}/category/cafe/${cafeId}`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category/cafe/${cafeId}`
+        );
         const data = await res.json();
         setCategories(data.categories || []);
         setIsLoading(false);
@@ -49,7 +51,7 @@ export function CategoryManagerDialog({
 
   const handleCreate = async () => {
     if (!newCategoryName.trim()) return;
-    await fetch(`${API_BASE_URL}/category`, {
+    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newCategoryName, cafeId }),
@@ -57,16 +59,21 @@ export function CategoryManagerDialog({
     setNewCategoryName("");
     onUpdate();
     // Refetch list inside dialog
-    const res = await fetch(`${API_BASE_URL}/category/cafe/${cafeId}`);
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category/cafe/${cafeId}`
+    );
     const data = await res.json();
     setCategories(data.categories || []);
   };
 
   const handleDelete = async () => {
     if (!categoryToDelete) return;
-    await fetch(`${API_BASE_URL}/category/${categoryToDelete.id}`, {
-      method: "DELETE",
-    });
+    await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category/${categoryToDelete.id}`,
+      {
+        method: "DELETE",
+      }
+    );
     setCategories((prev) => prev.filter((c) => c.id !== categoryToDelete.id));
     setCategoryToDelete(null);
     onUpdate();
@@ -88,8 +95,10 @@ export function CategoryManagerDialog({
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action is irreversible. Deleting the category{" "}
-              <span className="font-bold">"{categoryToDelete?.name}"</span> will
-              also{" "}
+              <span className="font-bold">
+                &quot;{categoryToDelete?.name}&quot;
+              </span>{" "}
+              will also{" "}
               <span className="font-bold text-destructive">
                 PERMANENTLY DELETE
               </span>{" "}
