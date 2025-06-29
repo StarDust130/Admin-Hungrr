@@ -25,7 +25,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Utensils } from "lucide-react";
+import { Sticker, Utensils } from "lucide-react";
 import Link from "next/link";
 
 const data = {
@@ -59,6 +59,11 @@ const data = {
       title: "Cafe",
       url: "/cafe",
       icon: IconCoffee,
+    },
+    {
+      title: "Feedback",
+      url: "/feedback",
+      icon: Sticker,
     },
   ],
   navSecondary: [
