@@ -1,6 +1,8 @@
+
 const page = () => {
+
   return (
-    <div>page</div>
+    <div className="flex justify-center items-center h-screen text-xl">Hello 😺</div>
   )
 }
 export default page
