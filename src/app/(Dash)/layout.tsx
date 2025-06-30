@@ -17,7 +17,7 @@ export default function DashboardLayout({
         } as React.CSSProperties
       }
     >
-      <div className="flex h-screen w-full overflow-hidden">
+      <div className="flex h-screen w-full overflow-hidden" suppressHydrationWarning>
         {/* Sidebar */}
         <AppSidebar />
 
