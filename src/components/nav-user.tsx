@@ -27,11 +27,11 @@ import {
 } from "@/components/ui/sidebar";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { UserProfile, useUser } from "@clerk/nextjs";
+import { SignOutButton, UserProfile, useUser } from "@clerk/nextjs";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
-  const { user } = useUser();
+  const { user  } = useUser();
   const [showUserProfile, setShowUserProfile] = useState(false);
 
   if (!user) return null;
@@ -106,8 +106,10 @@ export function NavUser() {
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <IconLogout className="mr-2 h-4 w-4" />
-                Log out
+                <SignOutButton>
+                  <IconLogout className="mr-2 h-4 w-4" />
+                  Log out
+                </SignOutButton>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
