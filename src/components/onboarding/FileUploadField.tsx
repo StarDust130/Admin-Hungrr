@@ -11,23 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OnboardingData } from "./types";
-import ImageKit from "imagekit-javascript";
+import { fileToBase64, imagekit } from "@/lib/imagekit";
+import Image from "next/image";
 
-const imagekit = new ImageKit({
-  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY!,
-  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL!,
-  authenticationEndpoint: "", // not needed, we call API manually
-});
 
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
-
+//! This function handles the image upload to ImageKit and returns the uploaded image URL.
 const handleImageUpload = async (file: File): Promise<string | null> => {
   if (!file) return null;
 
@@ -126,10 +114,13 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
             {isUploading ? (
               <Loader2 className="animate-spin text-muted-foreground" />
             ) : field.value ? (
-              <img
+              <Image
                 src={field.value as string}
                 alt="Preview"
                 className="w-full h-full object-cover"
+                width={isWide ? 400 : 300}
+                height={isWide ? 200 : 300}
+                
               />
             ) : (
               <div className="text-center p-4">
