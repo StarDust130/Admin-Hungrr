@@ -184,7 +184,7 @@ export default function Onboarding() {
         >
           <AnimatePresence mode="wait">
             {step > STEPS.length ? (
-              <SuccessDisplay user={user?.firstName} />
+              <SuccessDisplay user={user?.firstName ?? ""} />
             ) : (
               <Form {...form}>
                 <form
