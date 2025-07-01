@@ -139,6 +139,7 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
               size="sm"
               onClick={() => inputRef.current?.click()}
               disabled={isUploading}
+              className="cursor-pointer transition-transform active:scale-[0.98] flex items-center gap-2"
             >
               {isUploading ? "Uploading..." : "📁 Pick an image"}
             </Button>
