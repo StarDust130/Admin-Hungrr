@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Pencil, Check, X } from "lucide-react";
 import { Category } from "./menu-types";
-import { createCategory, deleteCategory, getCategoriesByCafe } from "./apiCall";
+import {
+  createCategory,
+  deleteCategory,
+  getCategoriesByCafe,
+  updateCategory, // Import the update function
+} from "./apiCall";
 
 type CategoryManagerDialogProps = {
   isOpen: boolean;
@@ -44,23 +49,28 @@ export function CategoryManagerDialog({
     null
   );
 
+  // ✨ State for inline editing
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingName, setEditingName] = useState("");
+
+  const fetchCats = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetched = await getCategoriesByCafe(cafeId);
+      setCategories(fetched || []);
+    } catch (error) {
+      console.error("Failed to fetch categories", error);
+      setCategories([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [cafeId]);
+
   useEffect(() => {
     if (isOpen) {
-      const fetchCats = async () => {
-        setIsLoading(true);
-        try {
-          const fetched = await getCategoriesByCafe(cafeId);
-          setCategories(fetched || []);
-        } catch (error) {
-          console.error("Failed to fetch categories", error);
-          setCategories([]);
-        } finally {
-          setIsLoading(false);
-        }
-      };
       fetchCats();
     }
-  }, [isOpen, cafeId]);
+  }, [isOpen, fetchCats]);
 
   const handleCreate = async () => {
     if (!newCategoryName.trim()) return;
@@ -68,15 +78,36 @@ export function CategoryManagerDialog({
     try {
       await createCategory(newCategoryName, cafeId);
       setNewCategoryName("");
-      onUpdate(); // Update categories on the main page
-      // Refetch categories for this dialog
-      const fetched = await getCategoriesByCafe(cafeId);
-      setCategories(fetched || []);
+      onUpdate();
+      await fetchCats();
     } catch (error) {
       console.error("Failed to create category", error);
-      // Optional: show an error toast
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // ✨ Handlers for starting and saving an edit
+  const handleStartEdit = (category: Category) => {
+    setEditingCategory(category);
+    setEditingName(category.name);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCategory(null);
+    setEditingName("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingCategory || !editingName.trim()) return;
+
+    try {
+      await updateCategory(editingCategory.id, editingName);
+      handleCancelEdit();
+      onUpdate();
+      await fetchCats();
+    } catch (error) {
+      console.error("Failed to update category", error);
     }
   };
 
@@ -89,7 +120,7 @@ export function CategoryManagerDialog({
     try {
       await deleteCategory(categoryToDelete.id);
       setCategories((prev) => prev.filter((c) => c.id !== categoryToDelete.id));
-      onUpdate(); // Update categories on the main page
+      onUpdate();
     } catch (error) {
       console.error("Failed to delete category", error);
     } finally {
@@ -104,11 +135,10 @@ export function CategoryManagerDialog({
           <DialogHeader>
             <DialogTitle>Manage Categories</DialogTitle>
             <DialogDescription>
-              Add new categories or remove existing ones.
+              Add, edit, or remove your menu categories.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Create New Category Form */}
           <div className="pt-4 space-y-2">
             <Label htmlFor="new-category">Add New Category</Label>
             <div className="flex gap-2">
@@ -116,7 +146,7 @@ export function CategoryManagerDialog({
                 id="new-category"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="e.g. Breads"
+                placeholder="e.g. Breads, Curries..."
                 disabled={isCreating}
               />
               <Button
@@ -131,7 +161,6 @@ export function CategoryManagerDialog({
             </div>
           </div>
 
-          {/* Existing Categories List */}
           <div className="mt-4 space-y-2">
             <h4 className="font-medium">Existing Categories</h4>
             {isLoading ? (
@@ -145,20 +174,57 @@ export function CategoryManagerDialog({
                     key={cat.id}
                     className="flex items-center justify-between p-2 rounded-md bg-muted/50"
                   >
-                    <span className="text-sm font-medium">{cat.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => startDelete(cat)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {editingCategory?.id === cat.id ? (
+                      // ✨ Editing View
+                      <div className="flex-1 flex items-center gap-2">
+                        <Input
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          className="h-8"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleSaveEdit}
+                        >
+                          <Check className="h-4 w-4 text-green-600" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleCancelEdit}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      // ✨ Display View
+                      <>
+                        <span className="text-sm font-medium">{cat.name}</span>
+                        <div className="flex items-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleStartEdit(cat)}
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startDelete(cat)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No categories found.
+                No categories found. Add one to get started.
               </p>
             )}
           </div>
