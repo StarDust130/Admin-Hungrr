@@ -43,8 +43,10 @@ export const StepFinancials: React.FC<StepFinancialsProps> = ({ control }) => (
               />
             </FormControl>
             <FormDescription>
-              💸 Customers will scan this to pay you via UPI. (Add UPI ID)
+              💸 Add your UPI ID — customers will use this to pay you. ✅
+              Double-check it!
             </FormDescription>
+
             <FormMessage />
           </FormItem>
         )}
