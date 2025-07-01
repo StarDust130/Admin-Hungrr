@@ -1,87 +1,110 @@
-"use client";
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  CheckCircle2,
+  Sparkles,
+  XCircle,
+  Layers3,
+  Tags,
+  LayoutGrid,
+} from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { LayoutGrid, Layers, Eye,  Tags, BookX, Sparkles } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-
-type StatsCardsProps = {
+export type MenuStats = {
   totalItems: number;
+  availableItems: number;
+  specialItems: number;
+  unavailableItems: number;
   totalCategories: number;
-  deactivatedItems: number;
-  totalTags?: number;
-  speacilItems?: number;
+  totalTags: number;
 };
 
-export function StatsCards({
-  totalItems,
-  totalCategories,
-  deactivatedItems,
-  speacilItems = 5,
-  totalTags = 0,
-}: StatsCardsProps) {
-  const activeItems = totalItems - deactivatedItems;
+type StatsCardsProps = {
+  stats: MenuStats | null;
+  loading: boolean;
+};
 
-  const stats = [
+const StatCard = ({
+  title,
+  value,
+  icon: Icon,
+  iconColor,
+  loading,
+}: {
+  title: string;
+  value: number;
+  icon: React.ElementType;
+  iconColor: string;
+  loading: boolean;
+}) => (
+  <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
+    <CardHeader className="flex flex-row items-center justify-between pb-1">
+      <CardTitle className="text-base font-medium text-muted-foreground">
+        {title}
+      </CardTitle>
+      <Icon className={`h-6 w-6 ${iconColor}`} />
+    </CardHeader>
+    <CardContent>
+      {loading ? (
+        <Skeleton className="h-8 w-1/2" />
+      ) : (
+        <div className="text-3xl font-semibold text-foreground">{value}</div>
+      )}
+    </CardContent>
+  </Card>
+);
+
+export function StatsCards({ stats, loading }: StatsCardsProps) {
+  const cardData = [
     {
-      label: "Menu Items",
-      value: totalItems,
+      title: "Menu Items",
+      value: stats?.totalItems,
       icon: LayoutGrid,
-      color: "text-blue-500",
+      iconColor: "text-emerald-500",
     },
     {
-      label: "Available",
-      value: activeItems,
-      icon: Eye,
-      color: "text-green-500",
+      title: "Available",
+      value: stats?.availableItems,
+      icon: CheckCircle2,
+      iconColor: "text-green-500",
     },
     {
-      label: "Speacil Items ",
-      value: speacilItems,
+      title: "Special Items",
+      value: stats?.specialItems,
       icon: Sparkles,
-      color: "text-yellow-500",
+      iconColor: "text-yellow-500",
     },
     {
-      label: "Unavailable",
-      value: deactivatedItems,
-      icon: BookX,
-      color: "text-red-500",
+      title: "Unavailable",
+      value: stats?.unavailableItems,
+      icon: XCircle,
+      iconColor: "text-rose-500",
     },
     {
-      label: "Categories",
-      value: totalCategories,
-      icon: Layers,
-      color: "text-pink-500",
+      title: "Categories",
+      value: stats?.totalCategories,
+      icon: Layers3,
+      iconColor: "text-sky-500",
     },
     {
-      label: "Tags",
-      value: totalTags,
+      title: "Tags",
+      value: stats?.totalTags,
       icon: Tags,
-      color: "text-orange-500",
+      iconColor: "text-violet-500",
     },
   ];
-  
-  
-  
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      {stats.map(({ label, value, icon: Icon, color }) => (
-        <Card
-          key={label}
-          className="p-3 flex flex-col justify-between rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-lg transition-shadow duration-300 ease-in-out"
-        >
-          <div className="flex items-center justify-between">
-            <p className=" text-xs md:text-sm font-medium md:font-bold">
-              {label}
-            </p>
-            <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
-              <Icon className={cn("w-5 h-5", color)} />
-            </div>
-          </div>
-          <p className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-            {value}
-          </p>
-        </Card>
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+      {cardData.map((card) => (
+        <StatCard
+          key={card.title}
+          title={card.title}
+          value={card.value ?? 0}
+          icon={card.icon}
+          iconColor={card.iconColor}
+          loading={loading}
+        />
       ))}
     </div>
   );
