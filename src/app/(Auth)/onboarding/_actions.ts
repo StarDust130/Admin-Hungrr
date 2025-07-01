@@ -4,10 +4,14 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 
 export const completeOnboarding = async (formData: FormData) => {
   const { userId } = await auth();
-  if (!userId) return { message: "Not Logged In" };
+
+  if (!userId) {
+    return { message: "No Logged In User" };
+  }
+
+  const client = await clerkClient();
 
   try {
-    const client = await clerkClient();
     const res = await client.users.updateUser(userId, {
       publicMetadata: {
         onboardingComplete: true,
@@ -15,9 +19,8 @@ export const completeOnboarding = async (formData: FormData) => {
         applicationType: formData.get("applicationType"),
       },
     });
-      
     return { message: res.publicMetadata };
-  } catch {
-    return { error: "Error updating metadata" };
+  } catch{
+    return { error: "There was an error updating the user metadata." };
   }
 };
