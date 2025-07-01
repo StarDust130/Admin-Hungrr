@@ -49,10 +49,10 @@ export const StepLocation: React.FC<StepLocationProps> = ({ control }) => (
       control={control}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Opening Hours</FormLabel>
+          <FormLabel>Opening Hours (optional)</FormLabel>
           <FormControl>
             <Input
-              placeholder="e.g., 9 AM - 11 PM"
+              placeholder="e.g. 9 AM - 11 PM"
               className={inputFocusRing}
               {...field}
             />
