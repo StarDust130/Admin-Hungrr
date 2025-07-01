@@ -45,7 +45,7 @@ export function MenuHeader({
                   variant="outline"
                   size="sm"
                   onClick={onManageCategories}
-                  className="h-9"
+                  className="h-9 cursor-pointer"
                 >
                   <Layers className="w-4 h-4 mr-1.5" />
                   Categories
@@ -58,18 +58,24 @@ export function MenuHeader({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  onClick={onAddItem}
-                  disabled={isAddDisabled}
-                  className="h-9"
-                >
-                  <Plus className="w-4 h-4 mr-1.5" />
-                  Add Item
-                </Button>
+                <div>
+                  <Button
+                    size="sm"
+                    onClick={onAddItem}
+                    disabled={isAddDisabled}
+                    className="h-9 pointer-events-auto cursor-pointer" // Ensure div allows tooltip
+                  >
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    Add Item
+                  </Button>
+                </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Create a new menu item</p>
+                <p>
+                  {isAddDisabled
+                    ? "Please create a category first"
+                    : "Create a new menu item"}
+                </p>
               </TooltipContent>
             </Tooltip>
           </div>
