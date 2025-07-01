@@ -4,7 +4,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
@@ -12,17 +11,45 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OnboardingData } from "./types";
+import ImageKit from "imagekit-javascript";
 
-// Mock API call for image upload
+const imagekit = new ImageKit({
+  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY!,
+  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL!,
+  authenticationEndpoint: "", // not needed, we call API manually
+});
+
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
 const handleImageUpload = async (file: File): Promise<string | null> => {
   if (!file) return null;
-  console.log(`Simulating upload for ${file.name}...`);
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  const randomId = Math.random().toString(36).substring(7);
-  const mockUrl = `https://ik.imagekit.io/demo/${file.name}?tr=w-1280,h-720&id=${randomId}`;
-  console.log(`Upload complete: ${mockUrl}`);
-  return mockUrl;
+
+  try {
+    const auth = await fetch("/api/imagekit-auth").then((res) => res.json());
+    const base64 = await fileToBase64(file);
+
+    const result = await imagekit.upload({
+      file: base64,
+      fileName: file.name,
+      signature: auth.signature,
+      token: auth.token,
+      expire: auth.expire,
+    });
+
+    return result.url;
+  } catch (error) {
+    console.error("Upload failed:", error);
+    return null;
+  }
 };
+
 
 interface FileUploadFieldProps {
   control: Control<OnboardingData>;
