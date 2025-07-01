@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -9,10 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Trash2 } from "lucide-react";
 import { Category } from "./menu-types";
-import { Dialog } from "../ui/dialog";
-
-
+import { createCategory, deleteCategory, getCategoriesByCafe } from "./apiCall";
 
 type CategoryManagerDialogProps = {
   isOpen: boolean;
@@ -29,6 +38,7 @@ export function CategoryManagerDialog({
 }: CategoryManagerDialogProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
     null
@@ -38,12 +48,15 @@ export function CategoryManagerDialog({
     if (isOpen) {
       const fetchCats = async () => {
         setIsLoading(true);
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category/cafe/${cafeId}`
-        );
-        const data = await res.json();
-        setCategories(data.categories || []);
-        setIsLoading(false);
+        try {
+          const fetched = await getCategoriesByCafe(cafeId);
+          setCategories(fetched || []);
+        } catch (error) {
+          console.error("Failed to fetch categories", error);
+          setCategories([]);
+        } finally {
+          setIsLoading(false);
+        }
       };
       fetchCats();
     }
@@ -51,39 +64,108 @@ export function CategoryManagerDialog({
 
   const handleCreate = async () => {
     if (!newCategoryName.trim()) return;
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newCategoryName, cafeId }),
-    });
-    setNewCategoryName("");
-    onUpdate();
-    // Refetch list inside dialog
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category/cafe/${cafeId}`
-    );
-    const data = await res.json();
-    setCategories(data.categories || []);
+    setIsCreating(true);
+    try {
+      await createCategory(newCategoryName, cafeId);
+      setNewCategoryName("");
+      onUpdate(); // Update categories on the main page
+      // Refetch categories for this dialog
+      const fetched = await getCategoriesByCafe(cafeId);
+      setCategories(fetched || []);
+    } catch (error) {
+      console.error("Failed to create category", error);
+      // Optional: show an error toast
+    } finally {
+      setIsCreating(false);
+    }
   };
 
-  const handleDelete = async () => {
+  const startDelete = (category: Category) => {
+    setCategoryToDelete(category);
+  };
+
+  const confirmDelete = async () => {
     if (!categoryToDelete) return;
-    await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category/${categoryToDelete.id}`,
-      {
-        method: "DELETE",
-      }
-    );
-    setCategories((prev) => prev.filter((c) => c.id !== categoryToDelete.id));
-    setCategoryToDelete(null);
-    onUpdate();
+    try {
+      await deleteCategory(categoryToDelete.id);
+      setCategories((prev) => prev.filter((c) => c.id !== categoryToDelete.id));
+      onUpdate(); // Update categories on the main page
+    } catch (error) {
+      console.error("Failed to delete category", error);
+    } finally {
+      setCategoryToDelete(null);
+    }
   };
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        {/* Dialog Content */}
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Categories</DialogTitle>
+            <DialogDescription>
+              Add new categories or remove existing ones.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Create New Category Form */}
+          <div className="pt-4 space-y-2">
+            <Label htmlFor="new-category">Add New Category</Label>
+            <div className="flex gap-2">
+              <Input
+                id="new-category"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g. Breads"
+                disabled={isCreating}
+              />
+              <Button
+                onClick={handleCreate}
+                disabled={isCreating || !newCategoryName}
+              >
+                {isCreating && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {/* Existing Categories List */}
+          <div className="mt-4 space-y-2">
+            <h4 className="font-medium">Existing Categories</h4>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-24">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : categories.length > 0 ? (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                {categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="flex items-center justify-between p-2 rounded-md bg-muted/50"
+                  >
+                    <span className="text-sm font-medium">{cat.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => startDelete(cat)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No categories found.
+              </p>
+            )}
+          </div>
+        </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={!!categoryToDelete}
         onOpenChange={() => setCategoryToDelete(null)}
@@ -91,24 +173,24 @@ export function CategoryManagerDialog({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-destructive">
-              DANGER: Are you sure?
+              Are you absolutely sure?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action is irreversible. Deleting the category{" "}
+              This action cannot be undone. Deleting the category{" "}
               <span className="font-bold">
                 &quot;{categoryToDelete?.name}&quot;
               </span>{" "}
               will also{" "}
               <span className="font-bold text-destructive">
-                PERMANENTLY DELETE
+                permanently delete
               </span>{" "}
-              all its menu items.
+              all of its associated menu items.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={confirmDelete}
               className="bg-destructive hover:bg-destructive/90"
             >
               Yes, Delete Everything
