@@ -10,7 +10,6 @@ import {
   Home,
   Landmark,
   CheckCircle,
-  PartyPopper,
   Loader2,
   AlertCircle,
   ArrowLeft,
@@ -29,6 +28,7 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
+import SuccessDisplay from "./SuccessDisplay";
 
 const useRouter = () => ({
   push: (path: string) => console.log(`Navigating to: ${path}`),
@@ -169,32 +169,22 @@ export default function Onboarding() {
 
   return (
     <div className="flex items-center justify-center mx-auto my-5 h-screen p-4 bg-background font-sans">
-      <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 bg-card rounded-2xl shadow-2xl shadow-primary/5 min-h-[620px]">
-        <GuidancePanel currentStep={step} steps={STEPS}  />
-        <div className="p-8 lg:col-span-2">
+      <div
+        className={cn(
+          "w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3  rounded-2xl shadow-2xl shadow-primary/5",
+          step <= STEPS.length && "min-h-[620px] "
+        )}
+      >
+        <GuidancePanel currentStep={step} steps={STEPS} />
+        <div
+          className={cn(
+            "p-8",
+            step > STEPS.length ? "col-span-full" : "lg:col-span-2"
+          )}
+        >
           <AnimatePresence mode="wait">
             {step > STEPS.length ? (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="w-full h-full flex items-center justify-center px-4"
-              >
-                <div className="flex justify-center items-center flex-col w-full text-center border border-gray-200 shadow-lg rounded-2xl p-8 md:p-10 ">
-                  <PartyPopper className="text-green-500 w-12 h-12 mb-4 mx-auto" />
-                  <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-3">
-                    All Set, {user?.firstName}!
-                  </h2>
-                  <p className="text-gray-600 text-base md:text-lg mb-6">
-                    Your cafe is now live. Redirecting you to the dashboard...
-                    🚀
-                  </p>
-                  <div className="inline-block px-5 py-2 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                    🎊 Let the orders begin!
-                  </div>
-                </div>
-              </motion.div>
+              <SuccessDisplay user={user?.firstName} />
             ) : (
               <Form {...form}>
                 <form

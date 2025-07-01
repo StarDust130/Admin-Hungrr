@@ -49,7 +49,11 @@ const textVariants: Variants = {
   },
 };
 
-const SuccessDisplay = () => {
+interface SuccessDisplayProps {
+  user: string;
+}
+
+const SuccessDisplay = ({ user }: SuccessDisplayProps) => {
   return (
     <motion.div
       key="dark-mode-success"
@@ -87,6 +91,12 @@ const SuccessDisplay = () => {
         >
           Success!
         </motion.h2>
+        <motion.p
+          variants={textVariants}
+          className="mt-3 text-lg mb-4 font-medium text-green-600 dark:text-green-400 flex items-center gap-2"
+        >
+          Welcome aboard, <span className="font-semibold">{user}</span>!
+        </motion.p>
         <motion.p
           variants={textVariants}
           className="mt-2 text-xl dark:text-gray-400"
