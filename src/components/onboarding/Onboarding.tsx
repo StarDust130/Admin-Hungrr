@@ -5,11 +5,6 @@ import { motion, AnimatePresence, Transition } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Building,
-  ImageIcon,
-  Home,
-  Landmark,
-  CheckCircle,
   Loader2,
   AlertCircle,
   ArrowLeft,
@@ -17,7 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { OnboardingData, FormSchema, Step } from "./types";
+import { OnboardingData, FormSchema } from "./types";
 import { StepWelcome } from "./StepWelcome";
 import { StepBranding } from "./StepBranding";
 import { StepLocation } from "./StepLocation";
@@ -29,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
 import SuccessDisplay from "./SuccessDisplay";
+import { STEPS } from "./onboardingData";
 
 const useRouter = () => ({
   push: (path: string) => console.log(`Navigating to: ${path}`),
@@ -87,47 +83,7 @@ export default function Onboarding() {
     fetchIp();
   }, [form]);
 
-  const STEPS: Step[] = [
-    {
-      id: 1,
-      name: "Welcome",
-      title: "Let's Get Started",
-      description: "First, the basic details for your new cafe.",
-      icon: <Building />,
-      fields: ["name", "slug", "tagline"],
-    },
-    {
-      id: 2,
-      name: "Branding",
-      title: "Brand Identity",
-      description: "Upload your logo and banner to stand out.",
-      icon: <ImageIcon />,
-      fields: ["logoUrl", "bannerUrl"],
-    },
-    {
-      id: 3,
-      name: "Location & Contact",
-      title: "Find & Contact",
-      description: "How can customers find and contact you?",
-      icon: <Home />,
-      fields: ["address", "openingTime", "email", "phone"],
-    },
-    {
-      id: 4,
-      name: "Financials",
-      title: "Business & Payments",
-      description: "Provide info for invoicing and payments.",
-      icon: <Landmark />,
-      fields: ["gstNo", "gstPercentage", "payment_url"],
-    },
-    {
-      id: 5,
-      name: "Review",
-      title: "Final Review",
-      description: "One last look at everything before we go live.",
-      icon: <CheckCircle />,
-    },
-  ];
+
 
   const handleSlugGeneration = (name: string) => {
     const slug = name
