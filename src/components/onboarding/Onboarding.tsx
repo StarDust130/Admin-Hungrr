@@ -170,7 +170,7 @@ export default function Onboarding() {
   return (
     <div className="flex items-center justify-center mx-auto my-5 h-screen p-4 bg-background font-sans">
       <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 bg-card rounded-2xl shadow-2xl shadow-primary/5 min-h-[620px]">
-        <GuidancePanel currentStep={step} steps={STEPS} />
+        <GuidancePanel currentStep={step} steps={STEPS}  />
         <div className="p-8 lg:col-span-2">
           <AnimatePresence mode="wait">
             {step > STEPS.length ? (
@@ -181,7 +181,7 @@ export default function Onboarding() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
                 className="w-full h-full flex items-center justify-center px-4"
               >
-                <div className="max-w-md w-full text-center border border-gray-200 shadow-lg rounded-2xl p-8 md:p-10 bg-white">
+                <div className="flex justify-center items-center flex-col w-full text-center border border-gray-200 shadow-lg rounded-2xl p-8 md:p-10 ">
                   <PartyPopper className="text-green-500 w-12 h-12 mb-4 mx-auto" />
                   <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-3">
                     All Set, {user?.firstName}!
