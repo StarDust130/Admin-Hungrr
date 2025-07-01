@@ -10,12 +10,14 @@ import {
   Landmark,
 } from "lucide-react";
 import { OnboardingData } from "./types"; // Assuming types are in a shared file
+import Image from "next/image";
 
 // --- PROPS DEFINITION ---
 interface ReviewStepProps {
   getValues: () => OnboardingData;
+  agreedToTerms: boolean;
+  setAgreedToTerms: (checked: boolean) => void;
 }
-
 // --- SUB-COMPONENT for displaying each piece of information ---
 const InfoItem = ({
   icon,
@@ -41,7 +43,7 @@ const InfoItem = ({
   ) : null;
 
 // --- MAIN REVIEW STEP COMPONENT ---
-export const ReviewStep: React.FC<ReviewStepProps> = ({ getValues }) => {
+export const ReviewStep: React.FC<ReviewStepProps> = ({ getValues ,agreedToTerms ,setAgreedToTerms }) => {
   const data = getValues();
 
   return (
@@ -49,10 +51,12 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ getValues }) => {
       {/* Banner Section */}
       <div className="h-32 bg-secondary overflow-hidden flex items-center justify-center">
         {data.bannerUrl ? (
-          <img
+          <Image
             src={data.bannerUrl}
             alt="Cafe Banner"
             className="w-full h-full object-cover"
+            width={800}
+            height={128}
           />
         ) : (
           <p className="text-sm text-muted-foreground">No banner uploaded</p>
@@ -64,10 +68,12 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ getValues }) => {
         <div className="flex items-center gap-4 -mt-16">
           <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-card bg-secondary shrink-0 flex items-center justify-center">
             {data.logoUrl ? (
-              <img
+              <Image
                 src={data.logoUrl}
                 alt="Cafe Logo"
                 className="w-full h-full object-cover"
+                width={100}
+                height={100}
               />
             ) : (
               <p className="text-xs text-muted-foreground text-center p-1">
@@ -114,6 +120,38 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ getValues }) => {
             value={data.gstPercentage ? `${data.gstPercentage}%` : "Not Set"}
           />
         </div>
+      </div>
+
+      <div className="mt-8 px-4 py-3 rounded-lg border bg-muted/50 space-x-2 flex items-start">
+        <input
+          type="checkbox"
+          id="terms"
+          checked={agreedToTerms}
+          onChange={(e) => setAgreedToTerms(e.target.checked)}
+          className="mt-1 accent-primary border-muted-foreground"
+        />
+        <label
+          htmlFor="terms"
+          className="text-sm text-muted-foreground leading-relaxed"
+        >
+          I agree to the{" "}
+          <a
+            href="/terms-of-service"
+            className="underline hover:text-foreground transition"
+            target="_blank"
+          >
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a
+            href="/privacy-policy"
+            className="underline hover:text-foreground transition"
+            target="_blank"
+          >
+            Privacy Policy
+          </a>
+          .
+        </label>
       </div>
     </div>
   );
