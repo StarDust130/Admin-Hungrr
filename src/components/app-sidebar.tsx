@@ -113,6 +113,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/cafe/name/${user.id}`
         );
         setCafe(res.data.cafe);
+        localStorage.setItem("cafeId", res.data.cafe.id);
+
       } catch (error) {
         console.error("Failed to fetch cafe:", error);
       }
