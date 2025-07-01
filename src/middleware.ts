@@ -7,6 +7,8 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in",
   "/sign-up",
   "/api/imagekit-auth",
+  "/terms-of-service",
+  "/privacy-policy",
 ]);
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
