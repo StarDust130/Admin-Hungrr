@@ -17,6 +17,7 @@ export interface MenuItem {
   tags: string[];
   categoryId: number;
   cafeId: number;
+  dietary: string;
 }
 
 export interface PageInfo {
