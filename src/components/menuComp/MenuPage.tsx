@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDebounce } from "use-debounce";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, XCircle } from "lucide-react";
+import { Loader2, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Category, MenuItem, PageInfo, ViewMode } from "./menu-types";
 import { MenuHeader } from "./MenuHeader";
@@ -11,6 +11,7 @@ import { MenuGrid } from "./MenuGrid";
 import { MenuTable } from "./MenuTable";
 import { MenuItemDialog } from "./MenuItemDialog";
 import { CategoryManagerDialog } from "./CategoryDialog";
+import { MenuStats } from "./StatsCards"; // ✨ Import stats type
 import {
   AlertDialog,
   AlertDialogContent,
@@ -22,13 +23,24 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+
+// ✨ Import the new stats fetcher
+import {
+  deleteMenuItem,
+  getMenuStats,
+  saveMenuItem,
+  toggleMenuItemAvailability,
+} from "./apiCall";
 
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // ✨ New state for stats
+  const [stats, setStats] = useState<MenuStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const [pageInfo, setPageInfo] = useState<PageInfo>({
     currentPage: 1,
@@ -44,13 +56,34 @@ export default function MenuPage() {
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
-  const cafeId = 1;
+  const cafeId =
+    typeof window !== "undefined" ? localStorage.getItem("cafeId") : null;
 
-  // --- API LOGIC ---
+  // ✨ Callback to fetch stats
+  const fetchStats = useCallback(async () => {
+    if (!cafeId) return;
+    setStatsLoading(true);
+    try {
+      const statsData = await getMenuStats(Number(cafeId));
+      setStats(statsData);
+    } catch (err) {
+      console.error("Failed to fetch stats", err);
+      // Don't set a page-level error for stats, just log it
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [cafeId]);
+
   const fetchMenuItems = useCallback(
     async (page = 1) => {
       setLoading(true);
       setError(null);
+      if (!cafeId) {
+        setError("Cafe ID is not available.");
+        setLoading(false);
+        return;
+      }
+
       const params = new URLSearchParams({ page: String(page), limit: "10" });
       if (debouncedSearchQuery) params.append("search", debouncedSearchQuery);
       if (activeCategoryId)
@@ -70,6 +103,7 @@ export default function MenuPage() {
         setError(
           err instanceof Error ? err.message : "Failed to fetch menu items."
         );
+        setMenuItems([]);
       } finally {
         setLoading(false);
       }
@@ -78,6 +112,7 @@ export default function MenuPage() {
   );
 
   const fetchCategories = useCallback(async () => {
+    if (!cafeId) return;
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category/cafe/${cafeId}`
@@ -91,13 +126,19 @@ export default function MenuPage() {
     }
   }, [cafeId]);
 
+  // ✨ Combined initial fetch
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    if (cafeId) {
+      fetchCategories();
+      fetchStats();
+    }
+  }, [cafeId, fetchCategories, fetchStats]);
 
   useEffect(() => {
-    fetchMenuItems(1);
-  }, [debouncedSearchQuery, activeCategoryId, fetchMenuItems]);
+    if (cafeId) {
+      fetchMenuItems(1);
+    }
+  }, [debouncedSearchQuery, activeCategoryId, fetchMenuItems, cafeId]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pageInfo.totalPages) {
@@ -106,15 +147,68 @@ export default function MenuPage() {
     }
   };
 
-  const onToggleAvailability = async (itemId: number) => {
-    /* ... API Call ... */
+  const handleToggle = async (id: number) => {
+    setMenuItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === id ? { ...item, is_available: !item.is_available } : item
+      )
+    );
+    try {
+      await toggleMenuItemAvailability(id);
+      fetchStats(); // Refresh stats after toggle
+    } catch (err) {
+      console.error("Toggle error", err);
+      setMenuItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === id ? { ...item, is_available: !item.is_available } : item
+        )
+      );
+    }
   };
-  const handleSaveMenuItem = async (data: Partial<MenuItem>) => {
-    /* ... API Call ... */
+
+  const handleSave = async (menuData: Partial<MenuItem>) => {
+    try {
+      await saveMenuItem(menuData);
+      setIsMenuModalOpen(false);
+      await fetchMenuItems(pageInfo.currentPage);
+      fetchStats(); // Refresh stats after save
+    } catch (err) {
+      console.error("Save error", err);
+    }
   };
-  const handleDeleteMenuItem = async () => {
-    /* ... API Call ... */
+
+  const handleDeleteConfirm = async () => {
+    if (itemToDelete === null) return;
+    try {
+      await deleteMenuItem(itemToDelete);
+      setItemToDelete(null);
+      await fetchMenuItems(pageInfo.currentPage);
+      fetchStats(); // Refresh stats after delete
+    } catch (err) {
+      console.error("Delete error", err);
+      setItemToDelete(null);
+    }
   };
+
+  const handleManageCategoriesClick = () => {
+    if (!cafeId) {
+      alert("Cannot manage categories: Cafe ID not found in local storage.");
+      return;
+    }
+    setIsCategoryModalOpen(true);
+  };
+
+  if (!cafeId) {
+    return (
+      <div className="flex h-full flex-col justify-center items-center text-destructive">
+        <XCircle className="h-12 w-12 mb-4" />
+        <p className="font-semibold text-lg">Cafe ID not found.</p>
+        <p className="text-sm text-muted-foreground">
+          Please ensure you are logged in and have selected a cafe.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full gap-4 p-4 sm:p-6">
@@ -123,8 +217,10 @@ export default function MenuPage() {
           setEditingMenuItem(null);
           setIsMenuModalOpen(true);
         }}
-        onManageCategories={() => setIsCategoryModalOpen(true)}
+        onManageCategories={handleManageCategoriesClick}
         isAddDisabled={categories.length === 0}
+        stats={stats}
+        statsLoading={statsLoading}
       />
 
       <MenuControls
@@ -152,7 +248,7 @@ export default function MenuPage() {
         ) : viewMode === "grid" ? (
           <MenuGrid
             items={menuItems}
-            onToggle={onToggleAvailability}
+            onToggle={handleToggle}
             onEdit={(item) => {
               setEditingMenuItem(item);
               setIsMenuModalOpen(true);
@@ -162,7 +258,7 @@ export default function MenuPage() {
         ) : (
           <MenuTable
             items={menuItems}
-            onToggle={onToggleAvailability}
+            onToggle={handleToggle}
             onEdit={(item) => {
               setEditingMenuItem(item);
               setIsMenuModalOpen(true);
@@ -205,15 +301,19 @@ export default function MenuPage() {
           setIsOpen={setIsMenuModalOpen}
           initialData={editingMenuItem}
           categories={categories}
-          onSave={handleSaveMenuItem}
+          onSave={handleSave}
         />
       )}
-      {isCategoryModalOpen && (
+
+      {isCategoryModalOpen && cafeId && (
         <CategoryManagerDialog
           isOpen={isCategoryModalOpen}
           setIsOpen={setIsCategoryModalOpen}
-          cafeId={cafeId}
-          onUpdate={fetchCategories}
+          cafeId={parseInt(cafeId, 10)}
+          onUpdate={() => {
+            fetchCategories();
+            fetchStats(); // Refresh stats when categories change
+          }}
         />
       )}
       <AlertDialog
@@ -224,12 +324,13 @@ export default function MenuPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will hide the item from your menu.
+              This will hide the item from your menu but not permanently delete
+              it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteMenuItem}>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
               Deactivate
             </AlertDialogAction>
           </AlertDialogFooter>
