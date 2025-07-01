@@ -107,8 +107,10 @@ export function NavUser() {
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <SignOutButton>
-                  <IconLogout className="mr-2 h-4 w-4" />
-                  Log out
+                  <div className="flex items-center">
+                    <IconLogout className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </div>
                 </SignOutButton>
               </DropdownMenuItem>
             </DropdownMenuContent>
