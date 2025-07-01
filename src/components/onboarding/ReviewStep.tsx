@@ -88,7 +88,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ getValues }) => {
           <InfoItem
             icon={<LinkIcon />}
             label="URL Slug"
-            value={data.slug ? `your.app/${data.slug}` : "Not set"}
+            value={data.slug ? `hungrr.in/menu/${data.slug}` : "Not set"}
           />
           <InfoItem icon={<Home />} label="Address" value={data.address} />
           <InfoItem icon={<Mail />} label="Email" value={data.email} />
