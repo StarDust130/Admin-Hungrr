@@ -1,11 +1,10 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CheckCircle2,
   Sparkles,
   XCircle,
   Layers3,
-  Tags,
   LayoutGrid,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,27 +36,27 @@ const StatCard = ({
   iconColor: string;
   loading: boolean;
 }) => (
-  <Card className="rounded-xl shadow-sm hover:shadow-md transition-shadow">
-    <CardHeader className="flex flex-row items-center justify-between pb-1">
-      <CardTitle className="text-base font-medium text-muted-foreground">
+  <Card className="rounded-xl flex shadow-sm hover:shadow-md transition-transform duration-300 hover:scale-[1.02] px-4 py-3">
+    <CardHeader className="flex flex-row items-center justify-between gap-3 p-0">
+      <Icon className={`h-6 w-6 ${iconColor}`} />
+      <CardTitle className="text-base font-medium text-muted-foreground w-full text-start truncate">
         {title}
       </CardTitle>
-      <Icon className={`h-6 w-6 ${iconColor}`} />
-    </CardHeader>
-    <CardContent>
       {loading ? (
-        <Skeleton className="h-8 w-1/2" />
+        <Skeleton className="h-6 w-1/3" />
       ) : (
-        <div className="text-3xl font-semibold text-foreground">{value}</div>
+        <div className="text-base font-bold text-foreground">
+          {value}
+        </div>
       )}
-    </CardContent>
+    </CardHeader>
   </Card>
 );
 
 export function StatsCards({ stats, loading }: StatsCardsProps) {
   const cardData = [
     {
-      title: "Menu Items",
+      title: "Total Menu Items",
       value: stats?.totalItems,
       icon: LayoutGrid,
       iconColor: "text-emerald-500",
@@ -86,16 +85,10 @@ export function StatsCards({ stats, loading }: StatsCardsProps) {
       icon: Layers3,
       iconColor: "text-sky-500",
     },
-    {
-      title: "Tags",
-      value: stats?.totalTags,
-      icon: Tags,
-      iconColor: "text-violet-500",
-    },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
       {cardData.map((card) => (
         <StatCard
           key={card.title}
