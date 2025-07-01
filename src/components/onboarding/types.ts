@@ -1,46 +1,40 @@
 import { z } from "zod";
 import React from "react";
 
-// The main validation schema for your form data
 export const FormSchema = z.object({
-  name: z.string().min(2, "Every great cafe needs a name!"),
+  name: z.string().min(2, "📝 Give your cafe a cool name!"),
   slug: z
     .string()
-    .min(3, "A slug should be at least 3 characters.")
+    .min(3, "🔗 Slug must be 3+ characters.")
     .regex(
       /^[a-z0-9-]+$/,
-      "Only lowercase letters, numbers, and hyphens are allowed."
+      "❌ Only use lowercase letters, numbers, and hyphens."
     ),
   tagline: z.string().optional(),
-  email: z.string().email("Oops! That email doesn't look right."),
+  email: z.string().email("📧 That doesn't look like a valid email."),
   phone: z
     .string()
-    .min(10, "Please enter a valid 10-digit phone number.")
-    .max(10, "Phone number must be exactly 10 digits."),
-  logoUrl: z.string().url("Your logo is your signature. Please upload one."),
-  bannerUrl: z
-    .string()
-    .url("A banner welcomes your customers. Please upload one."),
-  address: z.string().min(10, "Where can people find your amazing coffee?"),
+    .min(10, "📱 Phone number must be 10 digits.")
+    .max(10, "📱 Phone number must be exactly 10 digits."),
+  logoUrl: z.string().url("🎨 Upload a logo to represent your cafe."),
+  bannerUrl: z.string().url("🖼️ Banners welcome your guests — don’t skip it!"),
+  address: z.string().min(10, "📍 Where is your cafe? Enter a proper address."),
   openingTime: z.string().optional(),
   gstNo: z.string().optional(),
   gstPercentage: z.coerce.number().optional(),
   payment_url: z
     .string()
-    .min(3, "How will you get paid? Enter a UPI ID or payment link."),
+    .min(3, "💸 How will customers pay you? Add UPI or link."),
   ipAddress: z.string().optional(),
 });
 
-// The inferred type from the schema
 export type OnboardingData = z.infer<typeof FormSchema>;
 
-// The interface for defining each step in the onboarding process
 export interface Step {
   id: number;
   name: string;
   title: string;
   description: string;
-  // This more specific type for `icon` fixes the TypeScript error
   icon: React.ReactElement<{ size?: number }>;
   fields?: (keyof OnboardingData)[];
 }
