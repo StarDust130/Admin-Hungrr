@@ -108,9 +108,19 @@ export default function Onboarding() {
     setServerError("");
     const res = await completeOnboarding(data);
     setIsLoading(false);
+    
+    if (user) {
+      await user.update({
+        unsafeMetadata: {
+          onboardingComplete: true,
+        },
+      });
+      
+    }
+    
     if (res.message) {
       setStep((prev) => prev + 1);
-      setTimeout(() => router.push("/dashboard"), 3000);
+      setTimeout(() => router.push("/dashboard"), 1500);
     }
   };
 
