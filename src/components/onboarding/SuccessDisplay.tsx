@@ -1,7 +1,6 @@
 import { motion, Variants } from "framer-motion";
 
-// By explicitly importing and using the `Variants` type, we ensure TypeScript
-// correctly validates our animation objects, fixing the "ease" property error.
+// Define animation variants with proper typing for TypeScript
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -32,7 +31,7 @@ const checkmarkVariants: Variants = {
     pathLength: 1,
     transition: {
       duration: 0.6,
-      ease: "easeInOut", // This is now correctly typed
+      ease: "easeInOut",
       delay: 0.5,
     },
   },
@@ -45,12 +44,12 @@ const textVariants: Variants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: "easeOut", // This is now correctly typed
+      ease: "easeOut",
     },
   },
 };
 
-const DarkModeSuccess = () => {
+const SuccessDisplay = () => {
   return (
     <motion.div
       key="dark-mode-success"
@@ -59,14 +58,12 @@ const DarkModeSuccess = () => {
       animate="visible"
       className="flex flex-col items-center justify-center gap-6 text-center"
     >
-      {/* Animated Circle and Checkmark */}
+      {/* Animated circle with checkmark */}
       <motion.div
         variants={circleVariants}
-        // Using a semi-transparent background for a better look on dark UI
         className="w-28 h-28 flex items-center justify-center rounded-full bg-green-500/20"
       >
         <svg
-          // Increased icon size and brighter color for visibility
           className="w-14 h-14 text-green-400"
           fill="none"
           viewBox="0 0 24 24"
@@ -82,33 +79,29 @@ const DarkModeSuccess = () => {
         </svg>
       </motion.div>
 
-      {/* Animated Text */}
+      {/* Animated success text */}
       <div className="flex flex-col items-center">
         <motion.h2
           variants={textVariants}
-          // Increased font size and lighter color for the heading
           className="text-4xl font-bold dark:text-gray-100"
         >
           Success!
         </motion.h2>
         <motion.p
           variants={textVariants}
-          // Increased font size and lighter color for the subheading
           className="mt-2 text-xl dark:text-gray-400"
         >
-          Your changes have been saved.
+          Your onboarding is completed successfully.
         </motion.p>
-
         <motion.p
           variants={textVariants}
-          // Increased font size and lighter color for the subheading
-          className=" text-sm mt-3 dark:text-gray-300"
+          className="mt-8 text-sm dark:text-gray-300"
         >
-          Redirect to Dashoard page...
+          Redirecting to the dashboard...
         </motion.p>
       </div>
     </motion.div>
   );
 };
 
-export default DarkModeSuccess;
+export default SuccessDisplay;
