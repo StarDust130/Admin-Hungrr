@@ -25,15 +25,11 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
 import SuccessDisplay from "./SuccessDisplay";
 import { STEPS } from "./onboardingData";
+import { useRouter } from "next/navigation";
+import { completeOnboarding } from "@/app/(Auth)/onboarding/_actions";
+import axios from "axios";
 
-const useRouter = () => ({
-  push: (path: string) => console.log(`Navigating to: ${path}`),
-});
-const completeOnboarding = async (data: OnboardingData) => {
-  console.log("Submitting form data to server:", data);
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  return { message: "Onboarding successful!" };
-};
+
 
 export default function Onboarding() {
   const { user } = useUser();
@@ -42,7 +38,8 @@ export default function Onboarding() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFileUploading, setIsFileUploading] = useState(false);
   const [serverError, setServerError] = useState("");
- 
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
   const form = useForm<OnboardingData>({
     resolver: zodResolver(FormSchema),
     mode: "onChange",
@@ -67,8 +64,7 @@ export default function Onboarding() {
     if (user?.primaryEmailAddress?.emailAddress) {
       form.setValue("email", user.primaryEmailAddress.emailAddress);
     }
-  }, [user?.primaryEmailAddress?.emailAddress , form]);
-  
+  }, [user?.primaryEmailAddress?.emailAddress, form]);
 
   useEffect(() => {
     const fetchIp = async () => {
@@ -76,14 +72,15 @@ export default function Onboarding() {
         const response = await fetch("https://api.ipify.org?format=json");
         const data = await response.json();
         form.setValue("ipAddress", data.ip);
+        console.log("Fetched IP address 😍:", data.ip);
+        
+        
       } catch (error) {
         console.error("Failed to fetch IP address:", error);
       }
     };
     fetchIp();
   }, [form]);
-
-
 
   const handleSlugGeneration = (name: string) => {
     const slug = name
@@ -103,26 +100,53 @@ export default function Onboarding() {
 
   const handlePrevStep = () => setStep((prev) => prev - 1);
 
+  //! Submit handler
   const onSubmit = async (data: OnboardingData) => {
     setIsLoading(true);
     setServerError("");
-    const res = await completeOnboarding(data);
-    setIsLoading(false);
-    
-    if (user) {
-      await user.update({
-        unsafeMetadata: {
-          onboardingComplete: true,
-        },
-      });
-      
+
+    // Append user_id to the data
+    const payload = {
+      ...data,
+      owner_id: user?.id,
+      ipAddress: data.ipAddress,
+    };
+
+    let clerkSuccess = false;
+    let backendSuccess = false;
+
+    // ✅ Update Clerk metadata
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value as string | Blob);
+      }
+    });
+    if (user?.id) formData.append("user_id", user.id);
+
+    const res = await completeOnboarding(formData);
+    if (res?.message) {
+      clerkSuccess = true;
     }
-    
-    if (res.message) {
+
+    // ✅ Send JSON to backend (NOT FormData)
+    try {
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/cafe`, payload);
+      backendSuccess = true;
+    } catch (axiosError) {
+      console.error("Error sending to backend:", axiosError);
+      setServerError("Failed to save data to backend.");
+    }
+
+    setIsLoading(false);
+
+    if (clerkSuccess && backendSuccess) {
+      await user?.reload();
       setStep((prev) => prev + 1);
       setTimeout(() => router.push("/dashboard"), 1500);
     }
   };
+  
 
   const isNavDisabled = isLoading || isFileUploading;
   const motionTransition: Transition = { duration: 0.4, ease: "easeInOut" };
@@ -185,7 +209,11 @@ export default function Onboarding() {
                           <StepFinancials control={form.control} />
                         )}
                         {step === 5 && (
-                          <ReviewStep getValues={form.getValues} />
+                          <ReviewStep
+                            getValues={form.getValues}
+                            agreedToTerms={agreedToTerms}
+                            setAgreedToTerms={setAgreedToTerms}
+                          />
                         )}
                       </motion.div>
                     </AnimatePresence>
@@ -222,9 +250,9 @@ export default function Onboarding() {
                       {step === STEPS.length && (
                         <Button
                           type="submit"
-                          disabled={isNavDisabled}
+                          disabled={isNavDisabled || !agreedToTerms}
                           size="lg"
-                          className="transition-transform active:scale-[0.98]"
+                          className="transition-transform active:scale-[0.98] cursor-pointer"
                         >
                           {isLoading ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
