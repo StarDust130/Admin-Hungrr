@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,44 +15,67 @@ type UnavailableCardProps = {
   item: MenuItem;
   onReactivate: () => void;
   onDelete: () => void;
+  category?: { name: string };
 };
 
 export function UnavailableCard({
   item,
   onReactivate,
   onDelete,
+  category,
 }: UnavailableCardProps) {
+  const price = Number(item.price);
+
   return (
-    <Card className="flex flex-col h-full shadow-md">
-      <CardHeader className="p-0">
+    <Card className="flex flex-col h-full border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+      {/* Smaller Image */}
+      <div className="w-full h-28 relative">
         <Image
-          width={300}
-          height={200}
-          src={item.food_image_url ?? "/no_food_placeholder.jpg"}
-          alt={item.name}
-          className="w-full h-32 object-cover rounded-t-lg"
+          src={item.food_image_url || "/no_food_placeholder.jpg"}
+          alt={item.name || "Food item"}
+          fill
+          className="object-cover"
         />
-      </CardHeader>
-      <CardContent className="p-4 flex-1">
-        <CardTitle className="text-base font-semibold line-clamp-2">
-          {item.name}
-        </CardTitle>
-        <p className="text-sm text-muted-foreground mt-1">
-          ₹{parseFloat(item.price as any).toFixed(2)}
-        </p>
-        {item.category?.name && (
-          <Badge variant="outline" className="mt-2">
-            {item.category.name}
-          </Badge>
-        )}
+      </div>
+
+      {/* Content */}
+      <CardContent className="p-3 pb-2 flex-1 flex flex-col justify-between">
+        <div className="space-y-1">
+          <CardTitle className="text-sm font-semibold line-clamp-2">
+            {item.name}
+          </CardTitle>
+
+          <p className="text-xs text-muted-foreground">
+            ₹{!isNaN(price) ? price.toFixed(2) : "0.00"}
+          </p>
+          {typeof category?.name === "string" && (
+            <Badge variant="outline" className="text-[10px] mt-1">
+              {category.name}
+            </Badge>
+          )}
+       
+        </div>
       </CardContent>
-      <CardFooter className="p-2 border-t grid grid-cols-2 gap-2">
-        <Button variant="outline" size="sm" onClick={onReactivate}>
-          <RotateCcw className="h-4 w-4 mr-2" />
+
+      {/* Footer Buttons */}
+      <CardFooter className="p-2 pt-1 border-t flex justify-center gap-2">
+        <Button
+          onClick={onReactivate}
+          variant="outline"
+          size="sm"
+          className="h-7 px-2 text-xs"
+        >
+          <RotateCcw className="h-3 w-3 mr-1" />
           Reactivate
         </Button>
-        <Button variant="destructive" size="sm" onClick={onDelete}>
-          <Trash2 className="h-4 w-4 mr-2" />
+
+        <Button
+          onClick={onDelete}
+          variant="destructive"
+          size="sm"
+          className="h-7 px-2 text-xs"
+        >
+          <Trash2 className="h-3 w-3 mr-1" />
           Delete
         </Button>
       </CardFooter>
