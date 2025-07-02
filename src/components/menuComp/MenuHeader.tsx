@@ -57,7 +57,7 @@ export function MenuHeader({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Create menu from an image</p>
+                <p>Quickly generate your menu with AI assistance</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
