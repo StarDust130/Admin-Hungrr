@@ -21,11 +21,37 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, X, UploadCloud } from "lucide-react";
+import { Loader2,  UploadCloud, Check } from "lucide-react";
 import { Category, MenuItem } from "./menu-types";
 import { imagekit, fileToBase64 } from "@/lib/imagekit";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 type Dietary = "veg" | "non_veg" | "vegan";
+
+const PREDEFINED_TAGS = [
+  "Spicy",
+  "Sweet",
+  "Bestseller",
+  "Chefs_Special",
+  "Healthy",
+  "Popular",
+  "New",
+  "Jain_Food",
+  "Signature_Dish",
+];
 
 type MenuItemFormDialogProps = {
   isOpen: boolean;
@@ -43,99 +69,89 @@ export function MenuItemDialog({
   onSave,
 }: MenuItemFormDialogProps) {
   const [formData, setFormData] = useState<Partial<MenuItem>>({});
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [tagInput, setTagInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cafeId =
     typeof window !== "undefined" ? localStorage.getItem("cafeId") : null;
 
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     if (isOpen) {
+      const initialTags = initialData?.tags || [];
       setFormData(
         initialData || {
           name: "",
           price: "",
           is_available: true,
           isSpecial: false,
-          tags: [],
           dietary: "veg",
           categoryId: categories[0]?.id,
           cafeId: cafeId ? parseInt(cafeId, 10) : undefined,
+          tags: [],
         }
       );
-      setImageFile(null);
+      setSelectedTags(new Set(initialTags));
       setIsUploading(false);
     }
   }, [isOpen, initialData, categories, cafeId]);
 
-  const handleFileSelect = (file: File | null) => {
-    if (file) {
-      setImageFile(file);
+  // ✨ FIX: Image upload is now handled immediately on file selection
+  const handleFileSelect = async (file: File | null) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const auth = await fetch("/api/imagekit-auth").then((res) => res.json());
+      const fileAsBase64 = await fileToBase64(file);
+      const uploadResult = await imagekit.upload({
+        file: fileAsBase64,
+        fileName: file.name,
+        signature: auth.signature,
+        token: auth.token,
+        expire: auth.expire,
+      });
+      // Update form data directly with the new URL
+      setFormData((prev) => ({ ...prev, food_image_url: uploadResult.url }));
+    } catch (error) {
+      console.error("ImageKit upload failed:", error);
+      alert("Image upload failed. Please try again.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      const newTag = tagInput.trim().toLowerCase();
-      if (newTag && !formData.tags?.includes(newTag)) {
-        setFormData((prev) => ({
-          ...prev,
-          tags: [...(prev.tags || []), newTag],
-        }));
-      }
-      setTagInput("");
+  const handleTagSelect = (tag: string) => {
+    const newSelectedTags = new Set(selectedTags);
+    if (newSelectedTags.has(tag)) {
+      newSelectedTags.delete(tag);
+    } else {
+      newSelectedTags.add(tag);
     }
+    setSelectedTags(newSelectedTags);
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags?.filter((tag) => tag !== tagToRemove),
-    }));
-  };
-
+  // ✨ FIX: handleSubmit is now simpler and only saves the form data
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
-    const finalData = { ...formData };
+    const finalData = {
+      ...formData,
+      price: formData.price || "",
+      tags: Array.from(selectedTags),
+    };
 
-    if (imageFile) {
-      setIsUploading(true);
-      try {
-        const auth = await fetch("/api/imagekit-auth").then((res) =>
-          res.json()
-        );
-        const fileAsBase64 = await fileToBase64(imageFile);
-        const uploadResult = await imagekit.upload({
-          file: fileAsBase64,
-          fileName: imageFile.name,
-          signature: auth.signature,
-          token: auth.token,
-          expire: auth.expire,
-        });
-        finalData.food_image_url = uploadResult.url;
-      } catch (error) {
-        console.error("ImageKit upload failed:", error);
-        alert("Image upload failed. Please try again.");
-        setIsSaving(false);
-        setIsUploading(false);
-        return;
-      }
-      setIsUploading(false);
+    try {
+      await onSave(finalData);
+    } catch (error) {
+      console.error("Save error", error);
     }
 
-    await onSave(finalData);
     setIsSaving(false);
     setIsOpen(false);
   };
-
-  const imagePreviewUrl = imageFile
-    ? URL.createObjectURL(imageFile)
-    : formData.food_image_url;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -152,20 +168,19 @@ export function MenuItemDialog({
           onSubmit={handleSubmit}
           className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-4"
         >
-          {/* --- Left Column: Image & Core Details --- */}
+          {/* Left Column */}
           <div className="space-y-4">
             <div>
               <Label>Food Image</Label>
-              {/* ✨ FIX: Changed `aspect-video` to a fixed height `h-48` for consistency */}
               <div
                 className="relative mt-2 w-full h-48 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-center overflow-hidden bg-secondary cursor-pointer hover:border-primary transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
                 {isUploading ? (
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                ) : imagePreviewUrl ? (
+                ) : formData.food_image_url ? ( // ✨ FIX: Preview is now driven by formData
                   <Image
-                    src={imagePreviewUrl}
+                    src={formData.food_image_url}
                     alt={formData.name || "Menu item image"}
                     fill
                     className="object-cover"
@@ -219,7 +234,7 @@ export function MenuItemDialog({
             </div>
           </div>
 
-          {/* --- Right Column: Pricing, Category, Tags --- */}
+          {/* Right Column */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -285,30 +300,58 @@ export function MenuItemDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tags">
-                General Tags (e.g. spicy, bestseller)
-              </Label>
-              <Input
-                id="tags"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={handleTagInputKeyDown}
-                placeholder="Type and press Enter"
-              />
-              <div className="flex flex-wrap gap-1 min-h-[24px] mt-2">
-                {formData.tags?.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
-                    <button
-                      type="button"
-                      className="ml-1"
-                      onClick={() => removeTag(tag)}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
+              <Label>General Tags</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start font-normal h-auto min-h-10"
+                  >
+                    <div className="flex gap-1 flex-wrap">
+                      {selectedTags.size > 0 ? (
+                        Array.from(selectedTags).map((tag) => (
+                          <Badge key={tag} variant="secondary">
+                            {tag.replace(/_/g, " ")}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground">
+                          Select tags...
+                        </span>
+                      )}
+                    </div>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[--radix-popover-trigger-width] p-0"
+                  align="start"
+                >
+                  <Command>
+                    <CommandInput placeholder="Search tags..." />
+                    <CommandList>
+                      <CommandEmpty>No tags found.</CommandEmpty>
+                      <CommandGroup>
+                        {PREDEFINED_TAGS.map((tag) => (
+                          <CommandItem
+                            key={tag}
+                            onSelect={() => handleTagSelect(tag)}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedTags.has(tag)
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            {tag.replace(/_/g, " ")}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex items-center space-x-2 pt-4">
@@ -319,25 +362,25 @@ export function MenuItemDialog({
                   setFormData((p) => ({ ...p, isSpecial: checked }))
                 }
               />
-              <Label htmlFor="isSpecial">
-                Mark as a &quot;Special&quot; item 🌟
-              </Label>
+              <Label htmlFor="isSpecial">Mark as a &apos;Special&apos; 🌟</Label>
             </div>
           </div>
 
-          {/* Footer spans both columns */}
           <DialogFooter className="md:col-span-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsOpen(false)}
-              disabled={isSaving}
+              disabled={isSaving || isUploading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving || !formData.categoryId}>
+            <Button
+              type="submit"
+              disabled={isSaving || isUploading || !formData.categoryId}
+            >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isUploading ? "Uploading..." : "Save Changes"}
+              Save Changes
             </Button>
           </DialogFooter>
         </form>

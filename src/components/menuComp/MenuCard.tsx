@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,15 +20,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+
 const tagColorClasses = [
   "border-transparent bg-sky-100 text-sky-800 dark:bg-sky-600/80 dark:text-white hover:bg-sky-200/80",
   "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-600/80 dark:text-white hover:bg-amber-200/80",
   "border-transparent bg-violet-100 text-violet-800 dark:bg-violet-600/80 dark:text-white hover:bg-violet-200/80",
-  "border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-600/80 dark:text-white hover:bg-emerald-200/80",
-  "border-transparent bg-rose-100 text-rose-800 dark:bg-rose-600/80 dark:text-white hover:bg-rose-200/80",
-  "border-transparent bg-indigo-100 text-indigo-800 dark:bg-indigo-600/80 dark:text-white hover:bg-indigo-200/80",
 ];
 
+// Simple hash function to pick a color
 const getTagColor = (tag: string) => {
   let hash = 0;
   for (let i = 0; i < tag.length; i++) {
@@ -55,18 +55,12 @@ export function MenuCard({ item, onToggle, onEdit, onDelete }: MenuCardProps) {
             alt={item.name}
             className="w-full h-40 object-cover"
           />
-          {item.tags?.length > 0 && (
-            <div className="absolute top-2 right-2 flex gap-1 flex-wrap">
-              {item.tags.slice(0, 3).map((tag) => (
-                <Badge
-                  key={tag}
-                  className={`text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm ${getTagColor(
-                    tag
-                  )}`}
-                >
-                  {tag}
-                </Badge>
-              ))}
+          {/* ✨ FIX: Handle a single tag string instead of an array */}
+          {item.tags && (
+            <div className="absolute top-2 right-2">
+              <Badge className={`text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm ${getTagColor(item.tags)}`}>
+                {item.tags.replace(/_/g, " ")}
+              </Badge>
             </div>
           )}
           {item.isSpecial && (
@@ -99,23 +93,20 @@ export function MenuCard({ item, onToggle, onEdit, onDelete }: MenuCardProps) {
               checked={item.is_available}
               onCheckedChange={onToggle}
             />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <label
-                  htmlFor={`toggle-card-${item.id}`}
-                  className="text-xs text-muted-foreground cursor-pointer"
-                >
-                  {item.is_available ? "Live" : "Hidden"}
-                </label>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {item.is_available
-                    ? "This item is visible to customers."
-                    : "This item is hidden from customers."}
-                </p>
-              </TooltipContent>
-            </Tooltip>
+             <Tooltip>
+                <TooltipTrigger asChild>
+                   <label htmlFor={`toggle-card-${item.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                      {item.is_available ? "Live" : "Hidden"}
+                   </label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {item.is_available
+                      ? "This item is visible to customers."
+                      : "This item is hidden from customers."}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

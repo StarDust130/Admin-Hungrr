@@ -170,6 +170,8 @@ export default function MenuPage() {
     try {
       await saveMenuItem(menuData);
       setIsMenuModalOpen(false);
+      console.log("Menu Data Saved:", menuData);
+      
       await fetchMenuItems(pageInfo.currentPage);
       fetchStats(); // Refresh stats after save
     } catch (err) {
