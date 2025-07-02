@@ -14,7 +14,7 @@ export interface MenuItem {
   food_image_url: string;
   is_available: boolean;
   isSpecial: boolean;
-  tags: string[];
+  tags: string;
   categoryId: number;
   cafeId: number;
   dietary: string;
