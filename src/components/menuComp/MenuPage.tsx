@@ -368,13 +368,13 @@ export default function MenuPage() {
           isOpen={isCategoryModalOpen}
           setIsOpen={setIsCategoryModalOpen}
           cafeId={parseInt(cafeId, 10)}
-          onUpdate={() => {
-            fetchAllCategories();
+          onUpdate={async () => {
+            const updatedCategories = await getCategoriesByCafe(Number(cafeId));
+            setCategories(updatedCategories || []);
             fetchAllStats();
           }}
         />
       )}
-
       {isUnavailableModalOpen && (
         <UnavailableItemsDialog
           isOpen={isUnavailableModalOpen}
@@ -382,8 +382,9 @@ export default function MenuPage() {
           items={unavailableItems}
           isLoading={isUnavailableLoading}
           onReactivate={handleReactivateItem}
-          onDelete={setItemToHardDelete}
+          onDelete={async (id: number) => setItemToHardDelete(id)}
         />
+      )}
       )}
 
       <AlertDialog
