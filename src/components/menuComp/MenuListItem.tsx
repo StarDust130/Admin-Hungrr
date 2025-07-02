@@ -16,7 +16,8 @@ import Image from "next/image";
 // Re-using the same helper function for consistency
 const tagColorClasses = [
   "border-transparent bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300",
-  // ... same colors as in MenuCard
+  "border-transparent bg-amber-100 text-amber-800 dark:bg-amber-600/80 dark:text-white hover:bg-amber-200/80",
+  "border-transparent bg-violet-100 text-violet-800 dark:bg-violet-600/80 dark:text-white hover:bg-violet-200/80",
 ];
 const getTagColor = (tag: string) => {
   let hash = 0;
@@ -67,11 +68,18 @@ export function MenuListItem({
       </TableCell>
       <TableCell className="hidden lg:table-cell">
         <div className="flex flex-wrap gap-1">
-          {item.tags?.slice(0, 3).map((tag) => (
-            <Badge key={tag} className={getTagColor(tag)}>
-              {tag}
-            </Badge>
-          ))}
+          {/* Handle item.tags as string[] and render each tag as a Badge */}
+          {Array.isArray(item.tags) && item.tags.length > 0
+            ? item.tags.map((tag: string) => (
+                <Badge key={tag} className={getTagColor(tag)}>
+                  {tag.replace(/_/g, " ")}
+                </Badge>
+              ))
+            : typeof item.tags === "string" && item.tags && (
+                <Badge className={getTagColor(item.tags)}>
+                  {(item.tags as string).replace(/_/g, " ")}
+                </Badge>
+              )}
         </div>
       </TableCell>
       <TableCell>

@@ -20,28 +20,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Loader2,  UploadCloud, Check } from "lucide-react";
+import { Loader2, UploadCloud } from "lucide-react";
 import { Category, MenuItem } from "./menu-types";
 import { imagekit, fileToBase64 } from "@/lib/imagekit";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { cn } from "@/lib/utils";
 
+// --- Type Definitions ---
 type Dietary = "veg" | "non_veg" | "vegan";
+type ItemTag =
+  | "Spicy"
+  | "Sweet"
+  | "Bestseller"
+  | "Chefs_Special"
+  | "Healthy"
+  | "Popular"
+  | "New"
+  | "Jain_Food"
+  | "Signature_Dish";
 
-const PREDEFINED_TAGS = [
+const PREDEFINED_TAGS: ItemTag[] = [
   "Spicy",
   "Sweet",
   "Bestseller",
@@ -61,6 +57,7 @@ type MenuItemFormDialogProps = {
   onSave: (data: Partial<MenuItem>) => Promise<void>;
 };
 
+// --- Component ---
 export function MenuItemDialog({
   isOpen,
   setIsOpen,
@@ -75,11 +72,8 @@ export function MenuItemDialog({
   const cafeId =
     typeof window !== "undefined" ? localStorage.getItem("cafeId") : null;
 
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
-
   useEffect(() => {
     if (isOpen) {
-      const initialTags = initialData?.tags || [];
       setFormData(
         initialData || {
           name: "",
@@ -89,18 +83,14 @@ export function MenuItemDialog({
           dietary: "veg",
           categoryId: categories[0]?.id,
           cafeId: cafeId ? parseInt(cafeId, 10) : undefined,
-          tags: [],
         }
       );
-      setSelectedTags(new Set(initialTags));
       setIsUploading(false);
     }
   }, [isOpen, initialData, categories, cafeId]);
 
-  // ✨ FIX: Image upload is now handled immediately on file selection
   const handleFileSelect = async (file: File | null) => {
     if (!file) return;
-
     setIsUploading(true);
     try {
       const auth = await fetch("/api/imagekit-auth").then((res) => res.json());
@@ -112,7 +102,6 @@ export function MenuItemDialog({
         token: auth.token,
         expire: auth.expire,
       });
-      // Update form data directly with the new URL
       setFormData((prev) => ({ ...prev, food_image_url: uploadResult.url }));
     } catch (error) {
       console.error("ImageKit upload failed:", error);
@@ -122,33 +111,19 @@ export function MenuItemDialog({
     }
   };
 
-  const handleTagSelect = (tag: string) => {
-    const newSelectedTags = new Set(selectedTags);
-    if (newSelectedTags.has(tag)) {
-      newSelectedTags.delete(tag);
-    } else {
-      newSelectedTags.add(tag);
-    }
-    setSelectedTags(newSelectedTags);
-  };
-
-  // ✨ FIX: handleSubmit is now simpler and only saves the form data
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!formData.cafeId) {
+      alert("Error: Cafe ID is missing. Cannot save.");
+      return;
+    }
     setIsSaving(true);
-
-    const finalData = {
-      ...formData,
-      price: formData.price || "",
-      tags: Array.from(selectedTags),
-    };
-
     try {
+      const finalData = { ...formData, price: formData.price || "0" };
       await onSave(finalData);
     } catch (error) {
       console.error("Save error", error);
     }
-
     setIsSaving(false);
     setIsOpen(false);
   };
@@ -178,7 +153,7 @@ export function MenuItemDialog({
               >
                 {isUploading ? (
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                ) : formData.food_image_url ? ( // ✨ FIX: Preview is now driven by formData
+                ) : formData.food_image_url ? (
                   <Image
                     src={formData.food_image_url}
                     alt={formData.name || "Menu item image"}
@@ -275,83 +250,57 @@ export function MenuItemDialog({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="dietary">Dietary Type</Label>
-              <Select
-                name="dietary"
-                value={formData.dietary || "none"}
-                onValueChange={(value: Dietary | "none") =>
-                  setFormData((p) => ({
-                    ...p,
-                    dietary: value === "none" ? undefined : value,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="veg">Veg</SelectItem>
-                  <SelectItem value="non_veg">Non-Veg</SelectItem>
-                  <SelectItem value="vegan">Vegan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>General Tags</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start font-normal h-auto min-h-10"
-                  >
-                    <div className="flex gap-1 flex-wrap">
-                      {selectedTags.size > 0 ? (
-                        Array.from(selectedTags).map((tag) => (
-                          <Badge key={tag} variant="secondary">
-                            {tag.replace(/_/g, " ")}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-muted-foreground">
-                          Select tags...
-                        </span>
-                      )}
-                    </div>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-[--radix-popover-trigger-width] p-0"
-                  align="start"
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dietary">Dietary Type</Label>
+                <Select
+                  name="dietary"
+                  value={formData.dietary || "none"}
+                  onValueChange={(value: Dietary | "none") =>
+                    setFormData((p) => ({
+                      ...p,
+                      dietary: value === "none" ? undefined : value,
+                    }))
+                  }
                 >
-                  <Command>
-                    <CommandInput placeholder="Search tags..." />
-                    <CommandList>
-                      <CommandEmpty>No tags found.</CommandEmpty>
-                      <CommandGroup>
-                        {PREDEFINED_TAGS.map((tag) => (
-                          <CommandItem
-                            key={tag}
-                            onSelect={() => handleTagSelect(tag)}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedTags.has(tag)
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            {tag.replace(/_/g, " ")}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="veg">Veg</SelectItem>
+                    <SelectItem value="non_veg">Non-Veg</SelectItem>
+                    <SelectItem value="vegan">Vegan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tags">Tag</Label>
+                <Select
+                  name="tags"
+                  // ✅ FIX: The value is a simple string from the state
+                  value={formData.tags || "none"}
+                  onValueChange={(value: ItemTag | "none") =>
+                    setFormData((p) => ({
+                      ...p,
+                      // ✅ FIX: Store the tag as a single string, NOT an array
+                      tags: value === "none" ? undefined : value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {PREDEFINED_TAGS.map((tag) => (
+                      <SelectItem key={tag} value={tag}>
+                        {tag.replace(/_/g, " ")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="flex items-center space-x-2 pt-4">
@@ -362,7 +311,7 @@ export function MenuItemDialog({
                   setFormData((p) => ({ ...p, isSpecial: checked }))
                 }
               />
-              <Label htmlFor="isSpecial">Mark as a &apos;Special&apos; 🌟</Label>
+              <Label htmlFor="isSpecial">Mark as a &quot;Special&quot; 🌟</Label>
             </div>
           </div>
 

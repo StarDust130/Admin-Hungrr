@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,7 +17,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
 
 const tagColorClasses = [
   "border-transparent bg-sky-100 text-sky-800 dark:bg-sky-600/80 dark:text-white hover:bg-sky-200/80",
@@ -44,9 +41,12 @@ type MenuCardProps = {
 };
 
 export function MenuCard({ item, onToggle, onEdit, onDelete }: MenuCardProps) {
+  console.log("Rendering MenuCard for item:", item.tags);
+  
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="rounded-[10px] overflow-hidden border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
+      <div className="rounded-lg overflow-hidden border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
+        {/* Image Section */}
         <div className="relative">
           <Image
             width={400}
@@ -55,10 +55,13 @@ export function MenuCard({ item, onToggle, onEdit, onDelete }: MenuCardProps) {
             alt={item.name}
             className="w-full h-40 object-cover"
           />
-          {/* ✨ FIX: Handle a single tag string instead of an array */}
           {item.tags && (
             <div className="absolute top-2 right-2">
-              <Badge className={`text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm ${getTagColor(item.tags)}`}>
+              <Badge
+                className={`text-[10px] px-2 py-0.5 ... ${getTagColor(
+                  item.tags
+                )}`}
+              >
                 {item.tags.replace(/_/g, " ")}
               </Badge>
             </div>
@@ -73,19 +76,24 @@ export function MenuCard({ item, onToggle, onEdit, onDelete }: MenuCardProps) {
           )}
         </div>
 
-        <div className="p-3 flex-1 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-start gap-2">
-              <h3 className="font-semibold leading-tight line-clamp-2 text-sm">
-                {item.name}
-              </h3>
-              <span className="font-bold text-primary whitespace-nowrap text-sm">
-                ₹{parseFloat(item.price as any).toFixed(2)}
-              </span>
-            </div>
+        {/* ✨ FIX: Improved content section with description and better layout */}
+        <div className="p-4 flex-1 flex flex-col">
+          <div className="flex justify-between items-start gap-2">
+            <h3 className="font-semibold leading-tight line-clamp-2 text-sm">
+              {item.name}
+            </h3>
+            <span className="font-bold text-primary whitespace-nowrap text-sm">
+              ₹{parseFloat(item.price as any).toFixed(2)}
+            </span>
           </div>
+          {item.description && (
+            <p className="mt-2 text-xs text-muted-foreground line-clamp-3 flex-grow">
+              {item.description}
+            </p>
+          )}
         </div>
 
+        {/* Footer Section */}
         <div className="p-3 border-t bg-muted/50 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Switch
@@ -93,20 +101,23 @@ export function MenuCard({ item, onToggle, onEdit, onDelete }: MenuCardProps) {
               checked={item.is_available}
               onCheckedChange={onToggle}
             />
-             <Tooltip>
-                <TooltipTrigger asChild>
-                   <label htmlFor={`toggle-card-${item.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                      {item.is_available ? "Live" : "Hidden"}
-                   </label>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {item.is_available
-                      ? "This item is visible to customers."
-                      : "This item is hidden from customers."}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <label
+                  htmlFor={`toggle-card-${item.id}`}
+                  className="text-xs text-muted-foreground cursor-pointer"
+                >
+                  {item.is_available ? "Live" : "Hidden"}
+                </label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {item.is_available
+                    ? "This item is visible to customers."
+                    : "This item is hidden from customers."}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

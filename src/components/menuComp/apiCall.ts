@@ -11,6 +11,8 @@ import { MenuItem } from "./menu-types";
   // ➕ Create or ✏️ Update menu item
   export const saveMenuItem = async (data: Partial<MenuItem>) => {
     if (data.id) {
+        console.log("menu Data to backend 🫥 :", data);
+        
       await api.patch(`/menu/${data.id}`, data);
     } else {
       await api.post(`/menu`, data);
