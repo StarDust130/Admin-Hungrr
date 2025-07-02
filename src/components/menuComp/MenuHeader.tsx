@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Layers, UtensilsCrossed } from "lucide-react";
-import { StatsCards, MenuStats } from "./StatsCards"; // Import new component and type
+import { Plus, Layers, UtensilsCrossed, Archive } from "lucide-react"; // Import Archive icon
+import { StatsCards, MenuStats } from "./StatsCards";
 import {
   Tooltip,
   TooltipContent,
@@ -12,14 +12,16 @@ import {
 type MenuHeaderProps = {
   onAddItem: () => void;
   onManageCategories: () => void;
+  onShowUnavailable: () => void; // New prop to handle showing the dialog
   isAddDisabled: boolean;
-  stats: MenuStats | null; // ✨ Accept stats data
-  statsLoading: boolean; // ✨ Accept loading state for stats
+  stats: MenuStats | null;
+  statsLoading: boolean;
 };
 
 export function MenuHeader({
   onAddItem,
   onManageCategories,
+  onShowUnavailable, // Destructure new prop
   isAddDisabled,
   stats,
   statsLoading,
@@ -39,6 +41,24 @@ export function MenuHeader({
           </div>
 
           <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
+            {/* New Unavailable Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onShowUnavailable}
+                  className="h-9 cursor-pointer"
+                >
+                  <Archive className="w-4 h-4 mr-1.5" />
+                  Unavailable
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View and manage deactivated items</p>
+              </TooltipContent>
+            </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -63,7 +83,7 @@ export function MenuHeader({
                     size="sm"
                     onClick={onAddItem}
                     disabled={isAddDisabled}
-                    className="h-9 pointer-events-auto cursor-pointer" // Ensure div allows tooltip
+                    className="h-9 pointer-events-auto cursor-pointer"
                   >
                     <Plus className="w-4 h-4 mr-1.5" />
                     Add Item
@@ -81,7 +101,6 @@ export function MenuHeader({
           </div>
         </div>
 
-        {/* ✨ Render the new StatsCards component with data */}
         <StatsCards stats={stats} loading={statsLoading} />
       </header>
     </TooltipProvider>

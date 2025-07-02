@@ -3,15 +3,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useDebounce } from "use-debounce";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
-
-import { Category, MenuItem, PageInfo, ViewMode } from "./menu-types";
-import { MenuHeader } from "./MenuHeader";
-import { MenuControls } from "./MenuControls";
-import { MenuGrid } from "./MenuGrid";
-import { MenuTable } from "./MenuTable";
-import { MenuItemDialog } from "./MenuItemDialog";
-import { CategoryManagerDialog } from "./CategoryDialog";
-import { MenuStats } from "./StatsCards"; // ✨ Import stats type
 import {
   AlertDialog,
   AlertDialogContent,
@@ -24,24 +15,44 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
-// ✨ Import the new stats fetcher
+// Component Imports
+import { Category, MenuItem, PageInfo, ViewMode } from "./menu-types";
+import { MenuHeader } from "./MenuHeader";
+import { MenuControls } from "./MenuControls";
+import { MenuGrid } from "./MenuGrid";
+import { MenuTable } from "./MenuTable";
+import { MenuItemDialog } from "./MenuItemDialog";
+import { CategoryManagerDialog } from "./CategoryDialog";
+import { UnavailableItemsDialog } from "./UnavailableItemsDialog";
+import { MenuStats } from "./StatsCards";
+
+// API Call Imports
 import {
-  deleteMenuItem,
+  deleteMenuItem, // This is the soft delete
   getMenuStats,
   saveMenuItem,
   toggleMenuItemAvailability,
+  getUnavailableMenuItems,
+  reactivateMenuItem,
+  hardDeleteMenuItem,
+  getCategoriesByCafe,
 } from "./apiCall";
 
+// Main Component
 export default function MenuPage() {
+  // Core State
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [unavailableItems, setUnavailableItems] = useState<MenuItem[]>([]);
+  const [stats, setStats] = useState<MenuStats | null>(null);
+
+  // Loading & Error State
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [isUnavailableLoading, setIsUnavailableLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ✨ New state for stats
-  const [stats, setStats] = useState<MenuStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-
+  // UI & Filter State
   const [pageInfo, setPageInfo] = useState<PageInfo>({
     currentPage: 1,
     totalPages: 1,
@@ -49,18 +60,21 @@ export default function MenuPage() {
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
-
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+
+  // Dialog & Modal State
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null);
-  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null); // For soft delete
+  const [itemToHardDelete, setItemToHardDelete] = useState<number | null>(null); // For permanent delete
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isUnavailableModalOpen, setIsUnavailableModalOpen] = useState(false);
 
   const cafeId =
     typeof window !== "undefined" ? localStorage.getItem("cafeId") : null;
 
-  // ✨ Callback to fetch stats
-  const fetchStats = useCallback(async () => {
+  // --- DATA FETCHING ---
+  const fetchAllStats = useCallback(async () => {
     if (!cafeId) return;
     setStatsLoading(true);
     try {
@@ -68,21 +82,31 @@ export default function MenuPage() {
       setStats(statsData);
     } catch (err) {
       console.error("Failed to fetch stats", err);
-      // Don't set a page-level error for stats, just log it
     } finally {
       setStatsLoading(false);
     }
   }, [cafeId]);
 
-  const fetchMenuItems = useCallback(
+  const fetchAllCategories = useCallback(async () => {
+    if (!cafeId) return;
+    try {
+      const fetchedCategories = await getCategoriesByCafe(Number(cafeId));
+      setCategories(fetchedCategories || []);
+    } catch (err) {
+      console.error(err);
+      setError("Could not load categories.");
+    }
+  }, [cafeId]);
+
+  const fetchActiveMenuItems = useCallback(
     async (page = 1) => {
-      setLoading(true);
-      setError(null);
       if (!cafeId) {
         setError("Cafe ID is not available.");
         setLoading(false);
         return;
       }
+      setLoading(true);
+      setError(null);
 
       const params = new URLSearchParams({ page: String(page), limit: "10" });
       if (debouncedSearchQuery) params.append("search", debouncedSearchQuery);
@@ -111,43 +135,48 @@ export default function MenuPage() {
     [cafeId, activeCategoryId, debouncedSearchQuery]
   );
 
-  const fetchCategories = useCallback(async () => {
+  const fetchUnavailableItems = useCallback(async () => {
     if (!cafeId) return;
+    setIsUnavailableLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/category/cafe/${cafeId}`
-      );
-      if (!res.ok) throw new Error("Could not fetch categories");
-      const data = await res.json();
-      setCategories(data.categories || []);
+      const items = await getUnavailableMenuItems(Number(cafeId));
+      setUnavailableItems(items);
     } catch (err) {
-      console.error(err);
-      setError("Could not load categories.");
+      console.error("Failed to fetch unavailable items", err);
+    } finally {
+      setIsUnavailableLoading(false);
     }
   }, [cafeId]);
 
-  // ✨ Combined initial fetch
+  // --- EFFECTS ---
   useEffect(() => {
     if (cafeId) {
-      fetchCategories();
-      fetchStats();
+      fetchAllCategories();
+      fetchAllStats();
     }
-  }, [cafeId, fetchCategories, fetchStats]);
+  }, [cafeId, fetchAllCategories, fetchAllStats]);
 
   useEffect(() => {
     if (cafeId) {
-      fetchMenuItems(1);
+      fetchActiveMenuItems(1); // Reset to page 1 on filter change
     }
-  }, [debouncedSearchQuery, activeCategoryId, fetchMenuItems, cafeId]);
+  }, [debouncedSearchQuery, activeCategoryId, cafeId]); // Removed fetchActiveMenuItems from deps
 
+  // --- HANDLERS ---
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pageInfo.totalPages) {
       setPageInfo((prev) => ({ ...prev, currentPage: newPage }));
-      fetchMenuItems(newPage);
+      fetchActiveMenuItems(newPage);
     }
   };
 
-  const handleToggle = async (id: number) => {
+  const refreshAllData = async () => {
+    await fetchActiveMenuItems(pageInfo.currentPage);
+    await fetchAllStats();
+  };
+
+  const handleToggleAvailability = async (id: number) => {
+    const originalItems = [...menuItems];
     setMenuItems((prevItems) =>
       prevItems.map((item) =>
         item.id === id ? { ...item, is_available: !item.is_available } : item
@@ -155,51 +184,60 @@ export default function MenuPage() {
     );
     try {
       await toggleMenuItemAvailability(id);
-      fetchStats(); // Refresh stats after toggle
+      await fetchAllStats();
     } catch (err) {
       console.error("Toggle error", err);
-      setMenuItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === id ? { ...item, is_available: !item.is_available } : item
-        )
-      );
+      setMenuItems(originalItems); // Revert on error
     }
   };
 
-  const handleSave = async (menuData: Partial<MenuItem>) => {
+  const handleSaveItem = async (menuData: Partial<MenuItem>) => {
     try {
       await saveMenuItem(menuData);
       setIsMenuModalOpen(false);
-      console.log("Menu Data Saved:", menuData);
-      
-      await fetchMenuItems(pageInfo.currentPage);
-      fetchStats(); // Refresh stats after save
+      await refreshAllData();
     } catch (err) {
       console.error("Save error", err);
+      // Optionally show an error toast to the user
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeactivateConfirm = async () => {
     if (itemToDelete === null) return;
     try {
-      await deleteMenuItem(itemToDelete);
-      setItemToDelete(null);
-      await fetchMenuItems(pageInfo.currentPage);
-      fetchStats(); // Refresh stats after delete
+      await deleteMenuItem(itemToDelete); // Soft delete
+      await refreshAllData();
     } catch (err) {
-      console.error("Delete error", err);
+      console.error("Deactivate error", err);
+    } finally {
       setItemToDelete(null);
     }
   };
 
-  const handleManageCategoriesClick = () => {
-    if (!cafeId) {
-      alert("Cannot manage categories: Cafe ID not found in local storage.");
-      return;
+  const handleReactivateItem = async (itemId: number) => {
+    try {
+      await reactivateMenuItem(itemId);
+      await fetchUnavailableItems(); // Refresh unavailable list
+      await refreshAllData(); // Refresh main list and stats
+    } catch (err) {
+      console.error("Failed to reactivate item", err);
     }
-    setIsCategoryModalOpen(true);
   };
 
+  const handleHardDeleteConfirm = async () => {
+    if (itemToHardDelete === null) return;
+    try {
+      await hardDeleteMenuItem(itemToHardDelete);
+      await fetchUnavailableItems(); // Refresh list in the dialog
+      await fetchAllStats();
+    } catch (err) {
+      console.error("Failed to permanently delete item", err);
+    } finally {
+      setItemToHardDelete(null);
+    }
+  };
+
+  // --- RENDER ---
   if (!cafeId) {
     return (
       <div className="flex h-full flex-col justify-center items-center text-destructive">
@@ -219,7 +257,11 @@ export default function MenuPage() {
           setEditingMenuItem(null);
           setIsMenuModalOpen(true);
         }}
-        onManageCategories={handleManageCategoriesClick}
+        onManageCategories={() => setIsCategoryModalOpen(true)}
+        onShowUnavailable={() => {
+          fetchUnavailableItems();
+          setIsUnavailableModalOpen(true);
+        }}
         isAddDisabled={categories.length === 0}
         stats={stats}
         statsLoading={statsLoading}
@@ -250,7 +292,7 @@ export default function MenuPage() {
         ) : viewMode === "grid" ? (
           <MenuGrid
             items={menuItems}
-            onToggle={handleToggle}
+            onToggle={handleToggleAvailability}
             onEdit={(item) => {
               setEditingMenuItem(item);
               setIsMenuModalOpen(true);
@@ -260,7 +302,7 @@ export default function MenuPage() {
         ) : (
           <MenuTable
             items={menuItems}
-            onToggle={handleToggle}
+            onToggle={handleToggleAvailability}
             onEdit={(item) => {
               setEditingMenuItem(item);
               setIsMenuModalOpen(true);
@@ -303,7 +345,7 @@ export default function MenuPage() {
           setIsOpen={setIsMenuModalOpen}
           initialData={editingMenuItem}
           categories={categories}
-          onSave={handleSave}
+          onSave={handleSaveItem}
         />
       )}
 
@@ -313,11 +355,23 @@ export default function MenuPage() {
           setIsOpen={setIsCategoryModalOpen}
           cafeId={parseInt(cafeId, 10)}
           onUpdate={() => {
-            fetchCategories();
-            fetchStats(); // Refresh stats when categories change
+            fetchAllCategories();
+            fetchAllStats();
           }}
         />
       )}
+
+      {isUnavailableModalOpen && (
+        <UnavailableItemsDialog
+          isOpen={isUnavailableModalOpen}
+          setIsOpen={setIsUnavailableModalOpen}
+          items={unavailableItems}
+          isLoading={isUnavailableLoading}
+          onReactivate={handleReactivateItem}
+          onDelete={setItemToHardDelete}
+        />
+      )}
+
       <AlertDialog
         open={itemToDelete !== null}
         onOpenChange={() => setItemToDelete(null)}
@@ -327,13 +381,39 @@ export default function MenuPage() {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This will hide the item from your menu but not permanently delete
-              it.
+              it. You can reactivate it later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>
+            <AlertDialogAction onClick={handleDeactivateConfirm}>
               Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={itemToHardDelete !== null}
+        onOpenChange={() => setItemToHardDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">
+              Permanently Delete Item?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. All data for this item will be
+              removed forever.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleHardDeleteConfirm}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Yes, Delete Permanently
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

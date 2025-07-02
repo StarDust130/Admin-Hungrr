@@ -30,6 +30,29 @@ export const getMenuStats = async (cafeId: number) => {
     return res.data.stats;
 }
 
+/**
+ * Fetches all unavailable (soft-deleted) menu items for a cafe.
+ */
+export const getUnavailableMenuItems = async (cafeId: number) => {
+    const res = await api.get(`/menu/cafe/${cafeId}/unavailable`);
+    return res.data.items;
+  };
+  
+  /**
+   * Reactivates a soft-deleted menu item.
+   */
+  export const reactivateMenuItem = async (itemId: number) => {
+    await api.patch(`/menu/${itemId}/reactivate`);
+  };
+  
+  /**
+   * Permanently deletes a menu item from the database.
+   */
+  export const hardDeleteMenuItem = async (itemId: number) => {
+    await api.delete(`/menu/${itemId}/permanent`);
+  };
+  
+
   //! ────────────── CATEGORY ──────────────
 
   // 🔍 Get all menu items for a cafe
