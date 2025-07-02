@@ -175,6 +175,8 @@ export default function MenuPage() {
   const refreshAllData = async () => {
     await fetchActiveMenuItems(pageInfo.currentPage);
     await fetchAllStats();
+    await fetchAllCategories()
+
   };
 
   const handleToggleAvailability = async (id: number) => {
@@ -384,7 +386,6 @@ export default function MenuPage() {
           onReactivate={handleReactivateItem}
           onDelete={async (id: number) => setItemToHardDelete(id)}
         />
-      )}
       )}
 
       <AlertDialog
