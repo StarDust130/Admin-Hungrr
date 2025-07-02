@@ -37,6 +37,7 @@ import {
   hardDeleteMenuItem,
   getCategoriesByCafe,
 } from "./apiCall";
+import { AIMenuUploadDialog } from "./AIMenuUploadDialog";
 
 // Main Component
 export default function MenuPage() {
@@ -69,6 +70,7 @@ export default function MenuPage() {
   const [itemToHardDelete, setItemToHardDelete] = useState<number | null>(null); // For permanent delete
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isUnavailableModalOpen, setIsUnavailableModalOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const cafeId =
     typeof window !== "undefined" ? localStorage.getItem("cafeId") : null;
@@ -160,7 +162,7 @@ export default function MenuPage() {
     if (cafeId) {
       fetchActiveMenuItems(1); // Reset to page 1 on filter change
     }
-  }, [debouncedSearchQuery, activeCategoryId, cafeId]); // Removed fetchActiveMenuItems from deps
+  }, [debouncedSearchQuery, activeCategoryId, cafeId, fetchActiveMenuItems]);
 
   // --- HANDLERS ---
   const handlePageChange = (newPage: number) => {
@@ -251,7 +253,7 @@ export default function MenuPage() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-4 p-4 sm:p-6">
+    <div className="flex flex-col h-screen gap-4 p-4 sm:p-6">
       <MenuHeader
         onAddItem={() => {
           setEditingMenuItem(null);
@@ -265,6 +267,7 @@ export default function MenuPage() {
         isAddDisabled={categories.length === 0}
         stats={stats}
         statsLoading={statsLoading}
+        onAiUpload={() => setIsAiModalOpen(true)}
       />
 
       <MenuControls
@@ -313,12 +316,13 @@ export default function MenuPage() {
       </main>
 
       {!loading && pageInfo.totalPages > 1 && (
-        <footer className="flex items-center justify-center gap-4 pt-4">
+        <footer className="flex items-center justify-center gap-4 pt-5 pb-10">
           <Button
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(pageInfo.currentPage - 1)}
             disabled={pageInfo.currentPage <= 1}
+            className="cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Previous
@@ -331,6 +335,7 @@ export default function MenuPage() {
             size="sm"
             onClick={() => handlePageChange(pageInfo.currentPage + 1)}
             disabled={pageInfo.currentPage >= pageInfo.totalPages}
+            className="cursor-pointer"
           >
             Next
             <ChevronRight className="h-4 w-4 ml-1" />
@@ -346,6 +351,15 @@ export default function MenuPage() {
           initialData={editingMenuItem}
           categories={categories}
           onSave={handleSaveItem}
+        />
+      )}
+
+      {isAiModalOpen && cafeId && (
+        <AIMenuUploadDialog
+          isOpen={isAiModalOpen}
+          setIsOpen={setIsAiModalOpen}
+          cafeId={parseInt(cafeId, 10)}
+          onSuccess={refreshAllData} // Refresh all data on success
         />
       )}
 
