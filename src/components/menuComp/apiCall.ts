@@ -81,3 +81,24 @@ export const deleteCategory = async (categoryId: number) => {
   await api.delete(`/category/${categoryId}`);
 };
 
+
+// apiCall.ts (or your equivalent API utility)
+
+/**
+ * ✅ UPDATED: Processes menu TEXT by sending it to the backend.
+ * @param menuText The raw text of the menu.
+ */
+export const processMenuTextWithAI = async (menuText: string) => {
+  // The route might be different in your setup (e.g., /api/admin/menu/ai-upload)
+  const res = await api.post(`/menu/ai-upload`, { menuText });
+  return res.data;
+};
+
+/**
+ * Saves the AI-generated menu data in bulk.
+ * @param data The structured menu data with categories and items.
+ * @param cafeId The ID of the current cafe.
+ */
+export const bulkSaveAIMenu = async (data: any, cafeId: number) => {
+  await api.post(`/menu/ai-bulk-save`, { ...data, cafeId });
+};

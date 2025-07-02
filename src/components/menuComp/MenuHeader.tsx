@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Layers, UtensilsCrossed, Archive } from "lucide-react"; // Import Archive icon
+import { Plus, Layers, UtensilsCrossed, Archive, Wand2 } from "lucide-react"; // Import Archive icon
 import { StatsCards, MenuStats } from "./StatsCards";
 import {
   Tooltip,
@@ -13,6 +13,7 @@ type MenuHeaderProps = {
   onAddItem: () => void;
   onManageCategories: () => void;
   onShowUnavailable: () => void; // New prop to handle showing the dialog
+  onAiUpload: () => void; // Add new prop
   isAddDisabled: boolean;
   stats: MenuStats | null;
   statsLoading: boolean;
@@ -23,6 +24,7 @@ export function MenuHeader({
   onManageCategories,
   onShowUnavailable, // Destructure new prop
   isAddDisabled,
+  onAiUpload, // Add new prop
   stats,
   statsLoading,
 }: MenuHeaderProps) {
@@ -42,6 +44,22 @@ export function MenuHeader({
 
           <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
             {/* New Unavailable Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onAiUpload}
+                  className="h-9 cursor-pointer"
+                >
+                  <Wand2 className="w-4 h-4 mr-1.5 text-purple-500" />
+                  AI Menu Upload
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Create menu from an image</p>
+              </TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
