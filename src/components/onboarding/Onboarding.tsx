@@ -57,6 +57,7 @@ export default function Onboarding() {
       gstPercentage: 5,
       payment_url: "",
       ipAddress: "",
+      instaID: "",
     },
   });
 

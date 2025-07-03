@@ -26,6 +26,7 @@ export const FormSchema = z.object({
     .string()
     .min(3, "💸 How will customers pay you? Add UPI or link."),
   ipAddress: z.string().optional(),
+  instaID: z.string().optional(),
 });
 
 export type OnboardingData = z.infer<typeof FormSchema>;

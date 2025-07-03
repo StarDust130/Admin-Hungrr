@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { OnboardingData } from "./types";
-
+import { Instagram } from "lucide-react";
 
 const inputFocusRing =
   "focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none";
@@ -31,7 +31,7 @@ export const StepLocation: React.FC<StepLocationProps> = ({ control }) => (
             <FormLabel>Full Address</FormLabel>
             <FormControl>
               <Input
-                placeholder="e.g. 25 MG Road, Bhilai Chhattisgarh 490006"
+                placeholder="Aveer Arcade, Nehru Nagar East,  Bhilai, Chhattisgarh,  490020"
                 className={inputFocusRing}
                 {...field}
               />
@@ -70,7 +70,7 @@ export const StepLocation: React.FC<StepLocationProps> = ({ control }) => (
           <FormLabel>Contact Email</FormLabel>
           <FormControl>
             <Input
-              placeholder="e.g., foodgasam@gmail.com"
+              placeholder="e.g. foodgasam@gmail.com"
               type="email"
               className={inputFocusRing}
               {...field}
@@ -83,31 +83,60 @@ export const StepLocation: React.FC<StepLocationProps> = ({ control }) => (
         </FormItem>
       )}
     />
-    <FormField
-      name="phone"
-      control={control}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Contact Phone</FormLabel>
-          <FormControl>
-            <div className="flex items-center">
-              <div className="inline-flex items-center justify-center px-3 h-9 rounded-l-md border border-r-0 bg-secondary text-sm">
-                +91
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6 md:col-span-2">
+      <FormField
+        name="phone"
+        control={control}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Contact Phone</FormLabel>
+            <FormControl>
+              <div className="flex items-center">
+                <div className="inline-flex items-center justify-center px-3 h-9 rounded-l-md border border-r-0 bg-secondary text-sm">
+                  +91
+                </div>
+                <Input
+                  type="tel"
+                  placeholder="e.g. 81098 00010"
+                  className={cn("rounded-l-none", inputFocusRing)}
+                  {...field}
+                />
               </div>
-              <Input
-                type="tel"
-                placeholder="e.g., 98765 43210"
-                className={cn("rounded-l-none", inputFocusRing)}
-                {...field}
-              />
-            </div>
-          </FormControl>
-          <FormDescription>
-            📞 Customers may call you here for orders or queries.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+            </FormControl>
+            <FormDescription>
+              📞 Let customers reach you directly by phone.
+            </FormDescription>
+
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        name="instaID"
+        control={control}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Instagram ID</FormLabel>
+            <FormControl>
+              <div className="flex items-center">
+                <div className="inline-flex items-center justify-center px-3 h-9 rounded-l-md border border-r-0 bg-secondary text-sm">
+                  <Instagram className="w-4 h-4" />
+                </div>
+                <Input
+                  type="text"
+                  placeholder="e.g. eksaathindia"
+                  className={cn("rounded-l-none", inputFocusRing)}
+                  {...field}
+                />
+              </div>
+            </FormControl>
+            <FormDescription>
+              📸 Share your Instagram handle for more visibility.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   </div>
 );

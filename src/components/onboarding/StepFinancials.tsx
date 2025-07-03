@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/select";
 import { OnboardingData } from "./types";
 
-
 const inputFocusRing =
   "focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none";
 
@@ -61,7 +60,7 @@ export const StepFinancials: React.FC<StepFinancialsProps> = ({ control }) => (
           <FormLabel>GST Number (Optional)</FormLabel>
           <FormControl>
             <Input
-              placeholder="e.g., 22ABCDE1234F1Z5"
+              placeholder="e.g. 22ABCDE1234F1Z5"
               className={inputFocusRing}
               {...field}
             />

@@ -8,6 +8,7 @@ import {
   ScanLine,
   Percent,
   Landmark,
+  Instagram,
 } from "lucide-react";
 import { OnboardingData } from "./types"; // Assuming types are in a shared file
 import Image from "next/image";
@@ -91,36 +92,42 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ getValues ,agreedToTerms
 
         {/* Details Grid Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-          <InfoItem
-            icon={<LinkIcon />}
-            label="URL Slug"
-            value={data.slug ? `hungrr.in/menu/${data.slug}` : "Not set"}
-          />
-          <InfoItem icon={<Home />} label="Address" value={data.address} />
-          <InfoItem icon={<Mail />} label="Email" value={data.email} />
-          <InfoItem
-            icon={<Phone />}
-            label="Phone"
-            value={data.phone ? `+91 ${data.phone}` : ""}
-          />
-          <InfoItem icon={<Clock />} label="Hours" value={data.openingTime} />
-          <InfoItem
-            icon={<ScanLine />}
-            label="Payment UPI"
-            value={data.payment_url}
-          />
-          <InfoItem
-            icon={<Landmark />}
-            label="GST Number"
-            value={data.gstNo || "Not Provided"}
-          />
-          <InfoItem
-            icon={<Percent />}
-            label="GST Rate"
-            value={data.gstPercentage ? `${data.gstPercentage}%` : "Not Set"}
-          />
-        </div>
-      </div>
+  <InfoItem
+    icon={<LinkIcon />}
+    label="URL Slug"
+    value={data.slug ? `hungrr.in/menu/${data.slug}` : "Not set"}
+  />
+  <InfoItem icon={<Home />} label="Address" value={data.address} />
+  <InfoItem icon={<Mail />} label="Email" value={data.email} />
+  <InfoItem
+    icon={<Phone />}
+    label="Phone"
+    value={data.phone ? `+91 ${data.phone}` : ""}
+  />
+  <InfoItem
+    icon={<Instagram />}
+    label="Instagram"
+    value={data.instaID ? `@${data.instaID}` : "Not Linked"}
+  />
+  <InfoItem icon={<Clock />} label="Hours" value={data.openingTime} />
+  <InfoItem
+    icon={<ScanLine />}
+    label="Payment UPI"
+    value={data.payment_url}
+  />
+  <InfoItem
+    icon={<Landmark />}
+    label="GST Number"
+    value={data.gstNo || "Not Provided"}
+  />
+  <InfoItem
+    icon={<Percent />}
+    label="GST Rate"
+    value={data.gstPercentage ? `${data.gstPercentage}%` : "Not Set"}
+  />
+</div>
+</div>
+
 
       <div className="mt-8 px-4 py-3 rounded-lg border bg-muted/50 space-x-2 flex items-start">
         <input
