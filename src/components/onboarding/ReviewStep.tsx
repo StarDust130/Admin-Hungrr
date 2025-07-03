@@ -6,7 +6,6 @@ import {
   Clock,
   Link as LinkIcon,
   ScanLine,
-  Percent,
   Landmark,
   Instagram,
 } from "lucide-react";
@@ -119,11 +118,6 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({ getValues ,agreedToTerms
     icon={<Landmark />}
     label="GST Number"
     value={data.gstNo || "Not Provided"}
-  />
-  <InfoItem
-    icon={<Percent />}
-    label="GST Rate"
-    value={data.gstPercentage ? `${data.gstPercentage}%` : "Not Set"}
   />
 </div>
 </div>

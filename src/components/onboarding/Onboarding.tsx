@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 
 import { OnboardingData, FormSchema } from "./types";
@@ -29,7 +30,23 @@ import { useRouter } from "next/navigation";
 import { completeOnboarding } from "@/app/(Auth)/onboarding/_actions";
 import axios from "axios";
 
-
+// Placeholder data for the "Ek Saath" cafe
+const ekSaathData: Partial<OnboardingData> = {
+  name: "Ek Saath",
+  slug: "ek-saath",
+  tagline: "Ek Saath Specialty Coffee & Pizzeria",
+  phone: "8109800010",
+  logoUrl:
+    "https://ik.imagekit.io/hungrr/503203063_1127601849178489_1854416631741525799_n_-mFM4vzJB.jpg?updatedAt=1751531493232",
+  bannerUrl:
+    "https://ik.imagekit.io/hungrr/499275413_677112291948249_6229927055627318723_n__1__7WLmoR4jP_fgnyOBRr1.webp?updatedAt=1751532544721",
+  address: "Aveer Arcade, 44A/5  Nehru Nagar West, Bhilai, Chhattisgarh, 490020",
+  openingTime: "10:00 AM - 11:00 PM",
+  gstNo: "22ABCFB8782FIZ1",
+  gstPercentage: 5,
+  instaID: "eksaathindia",
+  isPureVeg: true, // Ek Saath is a pure veg cafe
+};
 
 export default function Onboarding() {
   const { user } = useUser();
@@ -39,6 +56,7 @@ export default function Onboarding() {
   const [isFileUploading, setIsFileUploading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showAutoFillButton, setShowAutoFillButton] = useState(false);
 
   const form = useForm<OnboardingData>({
     resolver: zodResolver(FormSchema),
@@ -58,8 +76,20 @@ export default function Onboarding() {
       payment_url: "",
       ipAddress: "",
       instaID: "",
+      isPureVeg: false, // Default to false
     },
   });
+
+  const watchedName = form.watch("name");
+
+  // Effect to show the auto-fill button when user types "Ek Saath"
+  useEffect(() => {
+    if (watchedName && watchedName.toLowerCase().startsWith("ek s")) {
+      setShowAutoFillButton(true);
+    } else {
+      setShowAutoFillButton(false);
+    }
+  }, [watchedName]);
 
   useEffect(() => {
     if (user?.primaryEmailAddress?.emailAddress) {
@@ -74,8 +104,6 @@ export default function Onboarding() {
         const data = await response.json();
         form.setValue("ipAddress", data.ip);
         console.log("Fetched IP address 😍:", data.ip);
-        
-        
       } catch (error) {
         console.error("Failed to fetch IP address:", error);
       }
@@ -93,7 +121,19 @@ export default function Onboarding() {
     form.setValue("slug", slug, { shouldValidate: true });
   };
 
+  // Handler to auto-fill the form with placeholder data
+  const handleAutoFill = () => {
+    Object.entries(ekSaathData).forEach(([key, value]) => {
+      form.setValue(key as keyof OnboardingData, value, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    });
+    setShowAutoFillButton(false); // Hide button after use
+  };
+
   const handleNextStep = async () => {
+    setShowAutoFillButton(false);
     const fields = STEPS[step - 1].fields;
     const isValid = await form.trigger(fields as (keyof OnboardingData)[]);
     if (isValid) setStep((prev) => prev + 1);
@@ -132,7 +172,10 @@ export default function Onboarding() {
 
     // ✅ Send JSON to backend (NOT FormData)
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/cafe`, payload);
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/cafe`,
+        payload
+      );
       backendSuccess = true;
     } catch (axiosError) {
       console.error("Error sending to backend:", axiosError);
@@ -147,7 +190,6 @@ export default function Onboarding() {
       setTimeout(() => router.push("/dashboard"), 1500);
     }
   };
-  
 
   const isNavDisabled = isLoading || isFileUploading;
   const motionTransition: Transition = { duration: 0.4, ease: "easeInOut" };
@@ -170,6 +212,7 @@ export default function Onboarding() {
         <div
           className={cn(
             "p-8",
+            "flex flex-col",
             step > STEPS.length ? "col-span-full" : "lg:col-span-2"
           )}
         >
@@ -183,6 +226,53 @@ export default function Onboarding() {
                   className="flex flex-col justify-between h-full"
                 >
                   <div className="flex-grow">
+                    <AnimatePresence>
+                      {showAutoFillButton && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+                          animate={{
+                            opacity: 1,
+                            height: "auto",
+                            marginBottom: "1.5rem",
+                          }}
+                          exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="flex justify-center">
+                            <Button
+                              type="button"
+                              onClick={handleAutoFill}
+                              variant="ghost"
+                              className={cn(
+                                "w-fit px-3 py-1.5 rounded-lg flex items-center gap-2",
+                                "border border-cyan-400/60",
+                                "bg-gradient-to-r from-cyan-900/60 to-cyan-700/30",
+                                "shadow-cyan-400/10 shadow",
+                                "transition-all duration-300 ease-in-out",
+                                "cursor-pointer"
+                              )}
+                              style={{
+                                color: "#b6f0ff",
+                              }}
+                            >
+                              <Wand2 className="h-4 w-4 text-yellow-400 sdrop-shadow-glow hover:rotate-[18deg] hover:scale-110 transition-transform duration-300" />
+                              <span className="text-xs font-medium tracking-tight text-cyan-100 transition-colors duration-200">
+                                <span className=" font-bold">
+                                  Fill with AI:{" "}
+                                </span>{" "}
+                                Instantly load &quot;Ek Saath&quot; details ✨
+                              </span>
+                            </Button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    {showAutoFillButton && (
+                        <p className="text-[10px] font-semibold text-gray-400 w-full text-center mt-1 -mb-2">
+                        (AI may make mistakes)
+                        </p>
+                    )}
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={step}
@@ -219,6 +309,7 @@ export default function Onboarding() {
                       </motion.div>
                     </AnimatePresence>
                   </div>
+
                   <div className="mt-8 pt-6 border-t">
                     {serverError && (
                       <div className="flex items-center gap-2 text-sm text-destructive mb-4 font-medium">
@@ -232,7 +323,7 @@ export default function Onboarding() {
                         disabled={isNavDisabled}
                         variant="ghost"
                         className={cn(
-                          "transition-transform active:scale-[0.98]",
+                          "transition-transform active:scale-[0.98] cursor-pointer",
                           step === 1 && "invisible"
                         )}
                       >
@@ -243,7 +334,7 @@ export default function Onboarding() {
                           type="button"
                           onClick={handleNextStep}
                           disabled={isNavDisabled}
-                          className="transition-transform active:scale-[0.98]"
+                          className="transition-transform active:scale-[0.98] cursor-pointer"
                         >
                           Next <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>

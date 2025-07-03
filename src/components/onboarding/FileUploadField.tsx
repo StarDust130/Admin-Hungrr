@@ -64,8 +64,11 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
   const isWide = previewStyle === "wide";
 
   const previewContainerClasses = isWide
-    ? "w-full h-40 rounded-lg"
-    : "w-30 h-30 rounded-lg";
+    ? "relative w-[360px] h-[150px] rounded-lg overflow-hidden"
+    : "relative w-[120px] h-[120px] rounded-lg";
+
+
+
 
   const handleFileSelect = async (file: File | null) => {
     if (file) {
@@ -114,18 +117,23 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
             {isUploading ? (
               <Loader2 className="animate-spin text-muted-foreground" />
             ) : field.value ? (
-              <Image
-                src={field.value as string}
-                alt="Preview"
-                className="w-full h-full object-cover"
-                width={isWide ? 400 : 300}
-                height={isWide ? 200 : 300}
-                
-              />
+              <div className="relative w-full h-full">
+                <Image
+                  src={field.value as string}
+                  alt="Preview"
+                  fill
+                  className="object-cover rounded-lg"
+                  sizes="(max-width: 768px) 100vw, 700px"
+                />
+              </div>
             ) : (
               <div className="text-center p-4">
                 <ImageIcon className="mx-auto w-10 h-10 text-muted-foreground" />
-                <p className={`mt-2  font-medium ${isWide ? "text-sm" : "text-[10px]"}`}>
+                <p
+                  className={`mt-2  font-medium ${
+                    isWide ? "text-sm" : "text-[10px]"
+                  }`}
+                >
                   Click or drag image to upload
                 </p>
               </div>

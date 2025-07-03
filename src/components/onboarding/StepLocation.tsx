@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { OnboardingData } from "./types";
-import { Instagram } from "lucide-react";
+import { Instagram, Leaf } from "lucide-react"; // Leaf icon for pure veg
 
 const inputFocusRing =
   "focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none";
@@ -116,7 +116,7 @@ export const StepLocation: React.FC<StepLocationProps> = ({ control }) => (
         control={control}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Instagram ID</FormLabel>
+            <FormLabel>Insta ID (optional)</FormLabel>
             <FormControl>
               <div className="flex items-center">
                 <div className="inline-flex items-center justify-center px-3 h-9 rounded-l-md border border-r-0 bg-secondary text-sm">
@@ -137,6 +137,35 @@ export const StepLocation: React.FC<StepLocationProps> = ({ control }) => (
           </FormItem>
         )}
       />
+      {/* Pure Veg Field */}
+      <div className="flex flex-col items-start gap-1">
+        <FormField
+          name="isPureVeg"
+          control={control}
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="checkbox"
+                  checked={field.value || false}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                  className="accent-green-500 w-4 h-4"
+                />
+                <FormLabel className="flex items-center gap-1 text-green-500 font-semibold text-sm m-0">
+                  <Leaf className="w-4 h-4 text-green-600" />
+                  Pure Veg Cafe (optional)
+                </FormLabel>
+              </div>
+
+              <FormDescription className="text-xs text-muted-foreground mt-1 pl-6">
+                🥗 Let customers know you serve only vegetarian food.
+              </FormDescription>
+
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
     </div>
   </div>
 );
