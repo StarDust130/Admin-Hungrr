@@ -39,21 +39,63 @@ export type Cafe = {
 
 // --- FORM SCHEMA ---
 const formSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  tagline: z.string().max(100).optional().nullable(),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name is required")
+    .refine((val) => val.trim().length > 0, "Name cannot be empty or spaces"),
+
+  tagline: z
+    .string()
+    .max(100)
+    .optional()
+    .nullable()
+    .transform((val) => (typeof val === "string" ? val.trim() : val)),
+
   logoUrl: z.string().url().optional().nullable(),
   bannerUrl: z.string().url().optional().nullable(),
-  address: z.string().min(10, "Address is required"),
-  phone: z.string().length(10, "Must be a 10-digit phone number"),
-  email: z.string().email(),
-  openingTime: z.string().max(50).optional().nullable(),
-  instaID: z.string().max(30).optional().nullable(),
-  gstNo: z.string().length(15).optional().or(z.literal("")).nullable(),
+
+  address: z
+    .string()
+    .trim()
+    .min(10, "Address is required")
+    .refine(
+      (val) => val.trim().length > 0,
+      "Address cannot be empty or spaces"
+    ),
+
+  phone: z
+    .string()
+    .trim()
+    .length(10, "Must be a 10-digit phone number")
+    .refine((val) => /^\d{10}$/.test(val), "Phone must be numeric"),
+
+  email: z.string().trim().email(),
+
+  openingTime: z
+    .string()
+    .max(50)
+    .optional()
+    .nullable()
+    .transform((val) => (typeof val === "string" ? val.trim() : val)),
+
+  instaID: z
+    .string()
+    .max(30)
+    .optional()
+    .nullable()
+    .transform((val) => (typeof val === "string" ? val.trim() : val)),
+
+  gstNo: z.string().trim().length(15).optional().or(z.literal("")).nullable(),
+
   gstPercentage: z.coerce.number().min(0).max(100).optional().nullable(),
+
   isPureVeg: z.boolean().optional().default(false),
   is_active: z.boolean().optional().default(true),
-  payment_url: z.string().nullable(),
+
+  payment_url: z.string().optional().nullable(),
 });
+;
 
 type CafeSettingsFormValues = z.infer<typeof formSchema>;
 
@@ -107,7 +149,7 @@ export default function CafePage() {
     if (isLoaded && user?.id) {
       getCafeByOwner(user.id)
         .then((data) => {
-          setCafeData(data);
+          setCafeData(data as any);
           reset(data);
         })
         .catch((err) => setError(err.message));
@@ -133,17 +175,17 @@ export default function CafePage() {
       return;
     }
 
-    await toast.promise(updateCafeDetails(user.id, changedData), {
+    toast.promise(updateCafeDetails(user.id, changedData), {
       loading: "Saving changes...",
       success: (data) => {
-        setCafeData(data.cafe); // local state
-        setCafe(data.cafe); // ✅ context → updates sidebar
-        reset(data.cafe);
+        const cafeWithStringId = { ...data.cafe, id: String(data.cafe.id) };
+        setCafeData(cafeWithStringId); // local state
+        setCafe(cafeWithStringId); // ✅ context → updates sidebar
+        reset(cafeWithStringId);
         setIsEditMode(false);
         return "Cafe updated successfully!";
       },
-      error: (err: any) =>
-        err.response?.data?.message || "Could not save settings.",
+      error: (err: any) => err.response?.data?.message || "Could not save settings.",
     });
   };
 
