@@ -37,10 +37,10 @@ export const CafeInfoDisplay: React.FC<{ cafe: Cafe }> = ({ cafe }) => (
               {cafe.tagline || "No tagline set"}
             </p>
             <div className="mt-2 flex gap-2 flex-wrap justify-center md:justify-start text-xs font-medium">
-              <StatusBadge label="Active" active={cafe.is_active} emoji="🟢" />
+              <StatusBadge label="Active" active={!!cafe.is_active} emoji="🟢" />
               <StatusBadge
                 label="Pure Veg"
-                active={cafe.isPureVeg}
+                active={!!cafe.isPureVeg}
                 emoji="🌱"
               />
             </div>
