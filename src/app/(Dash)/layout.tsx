@@ -19,17 +19,12 @@ export default function DashboardLayout({
         } as React.CSSProperties
       }
     >
-      <div
-        className="flex h-screen w-full overflow-hidden"
-        suppressHydrationWarning
-      >
+      <div className="flex h-screen w-full overflow-hidden">
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
           <SiteHeader />
-          {/* 1. This main container ONLY handles scrolling */}
           <main className="flex-1 overflow-y-auto">
-            {/* 2. This INNER div handles all the padding */}
-            <div className="p-6 lg:p-8">{children}</div>
+            <div className="p-6 lg:p-8">{children} </div>
           </main>
         </div>
       </div>

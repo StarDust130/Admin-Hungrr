@@ -8,15 +8,12 @@ import * as z from "zod";
 import { Toaster, toast } from "sonner";
 import { api } from "@/lib/axios";
 
-// Import the new components
 import { PageHeader } from "./PageHeader";
 import { CafeInfoDisplay } from "./CafeInfoDisplay";
 import { CafeEditForm } from "./CafeEditForm";
-
-// Shadcn UI Imports
 import { Skeleton } from "@/components/ui/skeleton";
 
-// --- TYPE DEFINITION (kept here as it's central to this page) ---
+// --- TYPES ---
 export interface Cafe {
   id: number;
   owner_id: string;
@@ -53,14 +50,16 @@ const formSchema = z.object({
   is_active: z.boolean().default(true),
   payment_url: z.string().url().optional().or(z.literal("")).nullable(),
 });
+
 type CafeSettingsFormValues = z.infer<typeof formSchema>;
 
-// --- API FUNCTIONS ---
+// --- API CALLS ---
 const getCafeByOwner = async (ownerId: string): Promise<Cafe> => {
   const response = await api.get(`/cafe/owner/${ownerId}`);
   if (response.data?.cafe) return response.data.cafe;
   throw new Error("Cafe data not found.");
 };
+
 const updateCafeDetails = async (
   ownerId: string,
   data: Partial<CafeSettingsFormValues>
@@ -69,7 +68,7 @@ const updateCafeDetails = async (
   return response.data;
 };
 
-// --- MAIN PAGE ---
+// --- MAIN COMPONENT ---
 export default function CafePage() {
   const [cafeData, setCafeData] = useState<Cafe | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,11 +79,25 @@ export default function CafePage() {
   const formMethods = useForm<CafeSettingsFormValues>({
     resolver: zodResolver(formSchema),
   });
+
   const {
     formState: { isDirty, isSubmitting },
     reset,
     handleSubmit,
   } = formMethods;
+
+  // ✅ Hide scrollbar in edit mode
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isEditMode) {
+      root.style.overflow = "hidden";
+    } else {
+      root.style.overflow = "";
+    }
+    return () => {
+      root.style.overflow = "";
+    };
+  }, [isEditMode]);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -99,16 +112,19 @@ export default function CafePage() {
 
   const onSubmit = async (values: CafeSettingsFormValues) => {
     if (!user) return toast.error("Authentication error.");
+
     const changedData = Object.fromEntries(
       Object.entries(values).filter(
         ([key]) =>
           formMethods.getFieldState(key as keyof CafeSettingsFormValues).isDirty
       )
     );
+
     if (Object.keys(changedData).length === 0) {
       toast.info("No changes were made.");
       return setIsEditMode(false);
     }
+
     await toast.promise(updateCafeDetails(user.id, changedData), {
       loading: "Saving changes...",
       success: (data) => {
@@ -150,7 +166,7 @@ export default function CafePage() {
           setIsEditMode(false);
         }}
       />
-      <form>
+      <form className="w-full">
         {isEditMode ? (
           <CafeEditForm setIsFileUploading={setIsFileUploading} />
         ) : (

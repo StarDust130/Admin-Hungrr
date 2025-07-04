@@ -28,7 +28,7 @@ interface CafeEditFormProps {
 export const CafeEditForm: React.FC<CafeEditFormProps> = ({
   setIsFileUploading,
 }) => (
-  <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+  <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 overflow-hidden w-full h-full">
     <div className="xl:col-span-2 space-y-8">
       <Card>
         <CardHeader>
