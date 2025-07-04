@@ -17,13 +17,13 @@ export const ComingSoon: React.FC<ComingSoonProps> = ({
         <Image
           src="/coming-soon.png"
           alt="Coming Soon"
-          width={260}
-          height={260}
+          width={220}
+          height={220}
           className="mx-auto mb-3"
         />
 
         <h1 className="text-2xl font-semibold tracking-tight leading-snug">
-          🚧 {pageName} is almost ready!
+          🚧 {pageName} Page!
         </h1>
 
         <p className="text-sm text-muted-foreground leading-relaxed">
