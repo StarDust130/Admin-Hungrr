@@ -1,7 +1,8 @@
+import CafePage from "@/components/cafeSettings/CafePage"
 
 const page = () => {
   return (
-    <div>page</div>
+    <CafePage />
   )
 }
 export default page
