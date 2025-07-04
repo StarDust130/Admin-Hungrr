@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -6,17 +7,17 @@ import { FormProvider, useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Toaster, toast } from "sonner";
-import { api } from "@/lib/axios";
+
 
 import { PageHeader } from "./PageHeader";
 import { CafeInfoDisplay } from "./CafeInfoDisplay";
 import { CafeEditForm } from "./CafeEditForm";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCafe } from "@/context/CafeContext"; // ✅ context to update sidebar
+import { getCafeByOwner, updateCafeDetails } from "../menuComp/apiCall";
 
 // --- TYPES ---
 export interface Cafe {
-  id: number;
+  id: string; // ✅ changed from number to string
   owner_id: string;
   name: string;
   tagline: string | null;
@@ -24,14 +25,14 @@ export interface Cafe {
   logoUrl: string | null;
   bannerUrl: string | null;
   payment_url: string | null;
-  isPureVeg: boolean;
+  isPureVeg?: boolean;
   address: string;
   gstNo: string | null;
   gstPercentage: number | null;
   phone: string;
   email: string;
   instaID: string | null;
-  is_active: boolean;
+  is_active?: boolean;
 }
 
 // --- FORM SCHEMA ---
@@ -47,27 +48,13 @@ const formSchema = z.object({
   instaID: z.string().max(30).optional().nullable(),
   gstNo: z.string().length(15).optional().or(z.literal("")).nullable(),
   gstPercentage: z.coerce.number().min(0).max(100).optional().nullable(),
-  isPureVeg: z.boolean().default(false),
-  is_active: z.boolean().default(true),
+  isPureVeg: z.boolean().optional().default(false),
+  is_active: z.boolean().optional().default(true),
   payment_url: z.string().nullable(),
 });
 
 type CafeSettingsFormValues = z.infer<typeof formSchema>;
 
-// --- API CALLS ---
-const getCafeByOwner = async (ownerId: string): Promise<Cafe> => {
-  const response = await api.get(`/cafe/owner/${ownerId}`);
-  if (response.data?.cafe) return response.data.cafe;
-  throw new Error("Cafe data not found.");
-};
-
-const updateCafeDetails = async (
-  ownerId: string,
-  data: Partial<CafeSettingsFormValues>
-): Promise<{ cafe: Cafe }> => {
-  const response = await api.patch(`/cafe/${ownerId}`, data);
-  return response.data;
-};
 
 // --- MAIN COMPONENT ---
 export default function CafePage() {
@@ -76,11 +63,25 @@ export default function CafePage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFileUploading, setIsFileUploading] = useState(false);
   const { user, isLoaded } = useUser();
-  const { setCafe: setCafeInContext } = useCafe(); // ✅ update sidebar
 
   const formMethods = useForm<CafeSettingsFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {} as CafeSettingsFormValues,
+    defaultValues: {
+      name: "",
+      address: "",
+      phone: "",
+      email: "",
+      is_active: true,
+      isPureVeg: false,
+      payment_url: null,
+      tagline: "",
+      logoUrl: "",
+      bannerUrl: "",
+      openingTime: "",
+      instaID: "",
+      gstNo: "",
+      gstPercentage: null,
+    },
   });
 
   const {
@@ -92,7 +93,8 @@ export default function CafePage() {
   // ✅ Hide scrollbar in edit mode
   useEffect(() => {
     const root = document.documentElement;
-    root.style.overflow = isEditMode ? "hidden" : "";
+    if (isEditMode) root.style.overflow = "hidden";
+    else root.style.overflow = "";
     return () => {
       root.style.overflow = "";
     };
@@ -100,7 +102,7 @@ export default function CafePage() {
 
   // ✅ Load cafe data
   useEffect(() => {
-    if (isLoaded && user) {
+    if (isLoaded && user?.id) {
       getCafeByOwner(user.id)
         .then((data) => {
           setCafeData(data);
@@ -108,9 +110,9 @@ export default function CafePage() {
         })
         .catch((err) => setError(err.message));
     }
-  }, [isLoaded, user, reset]);
+  }, [isLoaded, user?.id, reset]);
 
-  // ✅ Submit handler (with correct types)
+  // ✅ Submit logic
   const onSubmit: SubmitHandler<CafeSettingsFormValues> = async (values) => {
     if (!user) return toast.error("Authentication error.");
 
@@ -123,15 +125,15 @@ export default function CafePage() {
 
     if (Object.keys(changedData).length === 0) {
       toast.info("No changes were made.");
-      return setIsEditMode(false);
+      setIsEditMode(false);
+      return;
     }
 
     await toast.promise(updateCafeDetails(user.id, changedData), {
       loading: "Saving changes...",
       success: (data) => {
-        setCafeData(data.cafe);
+        setCafeData(data.cafe as any);
         reset(data.cafe);
-        setCafeInContext(data.cafe); // ✅ update sidebar
         setIsEditMode(false);
         return "Cafe updated successfully!";
       },
@@ -140,10 +142,12 @@ export default function CafePage() {
     });
   };
 
+  // ✅ Loading
   if (!isLoaded || (!cafeData && !error)) {
     return <Skeleton className="h-[600px] w-full rounded-lg" />;
   }
 
+  // ✅ Error UI
   if (error) {
     return (
       <div className="text-center py-10">
@@ -153,6 +157,7 @@ export default function CafePage() {
     );
   }
 
+  // ✅ Main Page
   return (
     <FormProvider {...formMethods}>
       <Toaster richColors position="bottom-right" />
@@ -162,7 +167,7 @@ export default function CafePage() {
         isSubmitting={isSubmitting}
         isFileUploading={isFileUploading}
         onEdit={() => setIsEditMode(true)}
-        onSave={handleSubmit(onSubmit)}
+        onSave={handleSubmit(onSubmit as any)}
         onCancel={() => {
           reset(cafeData || {});
           setIsEditMode(false);
