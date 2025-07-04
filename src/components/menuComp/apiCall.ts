@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { api } from "@/lib/axios";
 import { MenuItem } from "./menu-types";
+import { CafeSettingsFormValues } from "@/app/(Dash)/cafe/page";
 
 //! ────────────── MENU ITEM ──────────────
 
@@ -99,3 +100,57 @@ export const processMenuWithAI = async (
 export const bulkSaveAIMenu = async (data: any, cafeId: number) => {
   await api.post(`/menu/ai-bulk-save`, { ...data, cafeId });
 };
+
+
+
+export const getCafeByOwner = async (ownerId: string): Promise<Cafe> => {
+  try {
+    // CORRECTED URL: The path here is now relative to the baseURL in `api.ts`.
+    // This will result in a call to: http://localhost:5000/api/cafe/owner/:ownerId
+    const response = await api.get(`/cafe/owner/${ownerId}`);
+    return response.data.cafe;
+  } catch (error) {
+    console.error("Failed to fetch cafe data:", error);
+    throw new Error("Could not retrieve cafe details. Please check if the server is running and the owner ID is correct.");
+  }
+};
+
+/**
+ * Updates an existing cafe's details.
+ */
+export const updateCafeDetails = async (
+  ownerId: string,
+  data: Partial<CafeSettingsFormValues>
+): Promise<{ cafe: Cafe }> => { // Expect the updated cafe object back
+  try {
+    // CORRECTED URL: This will call http://localhost:5000/api/cafe/:ownerId
+    const response = await api.patch(`/cafe/${ownerId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to update cafe:", error);
+    throw new Error("The cafe settings could not be saved.");
+  }
+};
+export interface Cafe {
+  id: number;
+  owner_id: string;
+  name: string;
+  slug: string;
+  tagline: string | null;
+  openingTime: string | null;
+  logoUrl: string;
+  bannerUrl: string;
+  payment_url: string;
+  isPureVeg: boolean;
+  address: string;
+  gstNo: string | null;
+  gstPercentage: number | null;
+  phone: string;
+  email: string;
+  instaID: string | null;
+  is_active: boolean;
+  rating: string; // Prisma Decimal becomes a string in JSON
+  reviews: number;
+  created_at: string; // Prisma DateTime becomes a string in JSON
+  updated_at: string;
+}
