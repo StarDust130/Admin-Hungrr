@@ -48,7 +48,7 @@ const formSchema = z.object({
   gstPercentage: z.coerce.number().min(0).max(100).optional().nullable(),
   isPureVeg: z.boolean().default(false),
   is_active: z.boolean().default(true),
-  payment_url: z.string().url().optional().or(z.literal("")).nullable(),
+  payment_url: z.string().nullable(),
 });
 
 type CafeSettingsFormValues = z.infer<typeof formSchema>;
