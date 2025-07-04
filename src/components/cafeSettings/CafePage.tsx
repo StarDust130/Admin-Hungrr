@@ -14,26 +14,28 @@ import { CafeInfoDisplay } from "./CafeInfoDisplay";
 import { CafeEditForm } from "./CafeEditForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCafeByOwner, updateCafeDetails } from "../menuComp/apiCall";
+import { useCafe } from "@/context/CafeContext";
 
 // --- TYPES ---
-export interface Cafe {
-  id: string; // ✅ changed from number to string
-  owner_id: string;
-  name: string;
-  tagline: string | null;
-  openingTime: string | null;
-  logoUrl: string | null;
-  bannerUrl: string | null;
-  payment_url: string | null;
-  isPureVeg?: boolean;
-  address: string;
-  gstNo: string | null;
-  gstPercentage: number | null;
-  phone: string;
-  email: string;
-  instaID: string | null;
-  is_active?: boolean;
-}
+export type Cafe = {
+    id: string; // ✅ keep it string everywhere
+    owner_id: string;
+    name: string;
+    tagline: string | null;
+    openingTime: string | null;
+    logoUrl: string | null;
+    bannerUrl: string | null;
+    payment_url: string | null;
+    isPureVeg?: boolean;
+    address: string;
+    gstNo: string | null;
+    gstPercentage: number | null;
+    phone: string;
+    email: string;
+    instaID: string | null;
+    is_active?: boolean;
+  };
+  
 
 // --- FORM SCHEMA ---
 const formSchema = z.object({
@@ -113,6 +115,8 @@ export default function CafePage() {
   }, [isLoaded, user?.id, reset]);
 
   // ✅ Submit logic
+  const { setCafe } = useCafe();
+
   const onSubmit: SubmitHandler<CafeSettingsFormValues> = async (values) => {
     if (!user) return toast.error("Authentication error.");
 
@@ -132,7 +136,8 @@ export default function CafePage() {
     await toast.promise(updateCafeDetails(user.id, changedData), {
       loading: "Saving changes...",
       success: (data) => {
-        setCafeData(data.cafe as any);
+        setCafeData(data.cafe); // local state
+        setCafe(data.cafe); // ✅ context → updates sidebar
         reset(data.cafe);
         setIsEditMode(false);
         return "Cafe updated successfully!";
