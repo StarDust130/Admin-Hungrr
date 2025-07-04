@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Toaster, toast } from "sonner";
@@ -12,6 +12,7 @@ import { PageHeader } from "./PageHeader";
 import { CafeInfoDisplay } from "./CafeInfoDisplay";
 import { CafeEditForm } from "./CafeEditForm";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCafe } from "@/context/CafeContext"; // ✅ context to update sidebar
 
 // --- TYPES ---
 export interface Cafe {
@@ -75,9 +76,11 @@ export default function CafePage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isFileUploading, setIsFileUploading] = useState(false);
   const { user, isLoaded } = useUser();
+  const { setCafe: setCafeInContext } = useCafe(); // ✅ update sidebar
 
   const formMethods = useForm<CafeSettingsFormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: {} as CafeSettingsFormValues,
   });
 
   const {
@@ -89,16 +92,13 @@ export default function CafePage() {
   // ✅ Hide scrollbar in edit mode
   useEffect(() => {
     const root = document.documentElement;
-    if (isEditMode) {
-      root.style.overflow = "hidden";
-    } else {
-      root.style.overflow = "";
-    }
+    root.style.overflow = isEditMode ? "hidden" : "";
     return () => {
       root.style.overflow = "";
     };
   }, [isEditMode]);
 
+  // ✅ Load cafe data
   useEffect(() => {
     if (isLoaded && user) {
       getCafeByOwner(user.id)
@@ -110,7 +110,8 @@ export default function CafePage() {
     }
   }, [isLoaded, user, reset]);
 
-  const onSubmit = async (values: CafeSettingsFormValues) => {
+  // ✅ Submit handler (with correct types)
+  const onSubmit: SubmitHandler<CafeSettingsFormValues> = async (values) => {
     if (!user) return toast.error("Authentication error.");
 
     const changedData = Object.fromEntries(
@@ -130,6 +131,7 @@ export default function CafePage() {
       success: (data) => {
         setCafeData(data.cafe);
         reset(data.cafe);
+        setCafeInContext(data.cafe); // ✅ update sidebar
         setIsEditMode(false);
         return "Cafe updated successfully!";
       },

@@ -27,9 +27,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Sticker, Utensils } from "lucide-react";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
-import axios from "axios";
 import Image from "next/image";
+import { useCafe } from "@/context/CafeContext";
 
 const data = {
   user: {
@@ -95,33 +94,8 @@ const data = {
   ],
 };
 
-type CafeData = {
-  name: string;
-  logoUrl: string;
-};
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [cafe, setCafe] = React.useState<CafeData | null>(null);
-  const { user, isLoaded } = useUser();
-
-  React.useEffect(() => {
-    if (!isLoaded || !user?.id) return;
-
-    const fetchCafe = async () => {
-      try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/cafe/name/${user.id}`
-        );
-        setCafe(res.data.cafe);
-        localStorage.setItem("cafeId", res.data.cafe.id);
-
-      } catch (error) {
-        console.error("Failed to fetch cafe:", error);
-      }
-    };
-
-    fetchCafe();
-  }, [isLoaded, user?.id]);
+  const { cafe } = useCafe();
 
 
   return (
