@@ -1,5 +1,3 @@
-// src/app/orders/page.tsx
-
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { format } from "date-fns";
@@ -110,7 +108,7 @@ const OrdersPage = () => {
         body: JSON.stringify({ status: newStatus }),
       });
       fetchStats();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update status, rolling back UI.");
       fetchOrders();
     }

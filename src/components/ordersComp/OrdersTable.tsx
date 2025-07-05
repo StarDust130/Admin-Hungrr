@@ -43,23 +43,26 @@ import {
 import { cn } from "@/lib/utils";
 import { Order, PageInfo, OrderStatus } from "./types";
 
-// Configs
+// Helpers
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
     value
   );
+
 const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+
 const formatTime = (dateString: string) =>
   new Date(dateString).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
   });
+
 const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string }> =
   {
     pending: {
@@ -88,6 +91,7 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string }> =
         "bg-green-100 text-green-800 dark:bg-green-900/70 dark:text-green-300 border-green-200 dark:border-green-700/80",
     },
   };
+
 const ALL_STATUSES: OrderStatus[] = [
   "pending",
   "accepted",
@@ -96,7 +100,6 @@ const ALL_STATUSES: OrderStatus[] = [
   "completed",
 ];
 
-// Skeleton Component
 const TableRowSkeleton: React.FC = () => (
   <TableRow>
     <TableCell className="pl-6">
@@ -130,29 +133,29 @@ interface OrderTableProps {
   onStatusUpdate: (orderId: number, status: OrderStatus) => void;
 }
 
-export const OrderTable: React.FC<OrderTableProps> = (props) => {
-  const {
-    orders,
-    pageInfo,
-    isLoading,
-    activeTab,
-    searchQuery,
-    onTabChange,
-    onSearchChange,
-    onPageChange,
-    onViewDetails,
-    onStatusUpdate,
-  } = props;
-
+export const OrderTable: React.FC<OrderTableProps> = ({
+  orders,
+  pageInfo,
+  isLoading,
+  activeTab,
+  searchQuery,
+  onTabChange,
+  onSearchChange,
+  onPageChange,
+  onViewDetails,
+  onStatusUpdate,
+}) => {
   return (
     <Card>
+      {/* Header with Tabs & Search */}
       <CardHeader className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b px-6 py-4">
         <Tabs value={activeTab} onValueChange={onTabChange}>
           <TabsList className="w-full sm:w-auto">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="preparing">Preparing</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
+            {["all", "pending", "preparing", "completed"].map((status) => (
+              <TabsTrigger key={status} value={status} className="capitalize">
+                {status}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </Tabs>
         <div className="relative w-full sm:max-w-xs">
@@ -162,16 +165,18 @@ export const OrderTable: React.FC<OrderTableProps> = (props) => {
             placeholder="Search by Order ID..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm border rounded-lg bg-background"
+            className="w-full pl-10 pr-4 py-2 text-sm rounded-md border bg-background shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
+
+      {/* Table */}
+      <CardContent className="p-0 overflow-x-auto">
+        <Table className="min-w-full">
+          <TableHeader className="sticky top-0 z-10 bg-background border-b">
             <TableRow>
-              <TableHead className="pl-6">Customer</TableHead>
-              <TableHead>Order ID & Time</TableHead>
+              <TableHead className="pl-6">Order Info</TableHead>
+              <TableHead>Customer</TableHead>
               <TableHead className="text-center">Status</TableHead>
               <TableHead className="text-right">Amount</TableHead>
               <TableHead className="text-right pr-6">Actions</TableHead>
@@ -184,54 +189,69 @@ export const OrderTable: React.FC<OrderTableProps> = (props) => {
               ))
             ) : orders.length > 0 ? (
               orders.map((order) => (
-                <TableRow key={order.id} className="hover:bg-muted/50">
-                  <TableCell className="pl-6 py-3">
-                    <div className="font-medium">
-                      {order.customerName || `Order #${order.publicId}`}
+                <TableRow
+                  key={order.id}
+                  className="hover:bg-muted/40 transition-colors"
+                >
+                  {/* Order Info */}
+                  <TableCell className="pl-6 py-2.5">
+                    <div className="text-xs font-mono text-foreground font-medium">
+                      #{order.publicId}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {order.tableNo ? `Table #${order.tableNo}` : "Takeaway"}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-mono text-xs">{order.publicId}</div>
                     <div className="text-xs text-muted-foreground">
                       {formatDate(order.created_at)},{" "}
                       {formatTime(order.created_at)}
                     </div>
                   </TableCell>
-                  <TableCell className="text-center">
+
+                  {/* Customer Info */}
+                  <TableCell className="py-2.5">
+                    <div className="font-medium">
+                      {order.customerName || "Dine-in"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {order.tableNo ? `Table #${order.tableNo}` : "Takeaway"}
+                    </div>
+                  </TableCell>
+
+                  {/* Status */}
+                  <TableCell className="text-center py-2.5">
                     <Badge
                       variant="outline"
                       className={cn(
-                        "border-2",
+                        "border font-medium text-xs px-2 py-0.5",
                         STATUS_CONFIG[order.status].className
                       )}
                     >
                       {STATUS_CONFIG[order.status].label}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right font-semibold">
+
+                  {/* Amount */}
+                  <TableCell className="text-right py-2.5 font-semibold">
                     {formatCurrency(parseFloat(order.total_price))}
                   </TableCell>
-                  <TableCell className="text-right pr-6">
+
+                  {/* Actions */}
+                  <TableCell className="text-right pr-6 py-2.5">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-48 shadow-md"
+                      >
                         <DropdownMenuItem
                           onClick={() => onViewDetails(order.id)}
                         >
-                          <Eye className="mr-2 h-4 w-4" />
-                          <span>View Details</span>
+                          <Eye className="mr-2 h-4 w-4" /> View Details
                         </DropdownMenuItem>
                         <DropdownMenuSub>
                           <DropdownMenuSubTrigger>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Update Status</span>
+                            <Edit className="mr-2 h-4 w-4" /> Update Status
                           </DropdownMenuSubTrigger>
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
@@ -257,9 +277,8 @@ export const OrderTable: React.FC<OrderTableProps> = (props) => {
                           </DropdownMenuPortal>
                         </DropdownMenuSub>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => alert(`Printing...`)}>
-                          <Printer className="mr-2 h-4 w-4" />
-                          <span>Print Receipt</span>
+                        <DropdownMenuItem onClick={() => alert("Printing...")}>
+                          <Printer className="mr-2 h-4 w-4" /> Print Receipt
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -269,12 +288,10 @@ export const OrderTable: React.FC<OrderTableProps> = (props) => {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-48 text-center">
-                  <Package className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">
-                    No orders found
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Try adjusting your filters.
+                  <Package className="mx-auto h-10 w-10 text-muted-foreground" />
+                  <p className="mt-4 font-medium">No orders found</p>
+                  <p className="text-sm text-muted-foreground">
+                    Try different filters or a new date range.
                   </p>
                 </TableCell>
               </TableRow>
@@ -282,8 +299,10 @@ export const OrderTable: React.FC<OrderTableProps> = (props) => {
           </TableBody>
         </Table>
       </CardContent>
+
+      {/* Pagination Footer */}
       {pageInfo && pageInfo.totalOrders > 0 && (
-        <CardFooter className="flex items-center justify-between py-3 border-t">
+        <CardFooter className="flex items-center justify-between py-4 px-6 border-t bg-muted/20">
           <p className="text-sm text-muted-foreground">
             Showing{" "}
             <strong>
@@ -291,13 +310,13 @@ export const OrderTable: React.FC<OrderTableProps> = (props) => {
                 (pageInfo.currentPage - 1) * pageInfo.limit + 1,
                 pageInfo.totalOrders
               )}
-              -
+              –
               {Math.min(
                 pageInfo.currentPage * pageInfo.limit,
                 pageInfo.totalOrders
               )}
             </strong>{" "}
-            of <strong>{pageInfo.totalOrders}</strong> orders.
+            of <strong>{pageInfo.totalOrders}</strong>
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -306,7 +325,7 @@ export const OrderTable: React.FC<OrderTableProps> = (props) => {
               onClick={() => onPageChange(pageInfo.currentPage - 1)}
               disabled={pageInfo.currentPage === 1}
             >
-              <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+              <ChevronLeft className="h-4 w-4 mr-1" /> Prev
             </Button>
             <Button
               variant="outline"
