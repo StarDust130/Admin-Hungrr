@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { api } from "@/lib/axios";
-import { MenuItem } from "./menu-types";
-import { CafeSettingsFormValues } from "@/app/(Dash)/cafe/page";
+import { Category, MenuItem } from "./menu-types";
+import { CafeSettingsFormValues } from "../cafeSettings/CafePage";
 
 //! ────────────── MENU ITEM ──────────────
 
@@ -57,32 +57,40 @@ export const getUnavailableMenuItems = async (cafeId: number) => {
 
   //! ────────────── CATEGORY ──────────────
 
-  // 🔍 Get all menu items for a cafe
-  export const getMenuItemsByCafe = async (cafeId: number) => {
-    const res = await api.get(`/menu/cafe/${cafeId}`);
-    return res.data.menuItems;
-  };
-
-export const getCategoriesByCafe = async (cafeId: number) => {
+// 🔍 Get all categories for a cafe
+export const getCategoriesByCafe = async (cafeId: number): Promise<Category[]> => {
   const res = await api.get(`/category/cafe/${cafeId}`);
-  return res.data.categories;
+  // This now works because the backend sends { categories: [...] }
+  return res.data.categories || [];
 };
 
 // ➕ Create category
 export const createCategory = async (name: string, cafeId: number) => {
-  await api.post(`/category`, { name, cafeId });
+  const res = await api.post(`/category`, { name, cafeId });
+  return res.data;
 };
 
-// ✏️ Update category
-export const updateCategory = async (categoryId: number, name: string) => {
-  await api.patch(`/category/${categoryId}`, { name });
+// ✏️ Update category name
+// ✅ FIXED: This now correctly sends an object like { name: "New Name" }
+export const updateCategory = async (categoryId: number, data: { name: string }) => {
+  const res = await api.patch(`/category/${categoryId}`, data);
+  return res.data;
 };
 
 // ❌ Delete category
 export const deleteCategory = async (categoryId: number) => {
-  await api.delete(`/category/${categoryId}`);
+  const res = await api.delete(`/category/${categoryId}`);
+  return res.data;
 };
 
+// ✨ NEW: Update category order
+export const updateCategoryOrder = async (orderedCategories: { id: number; order: number }[]) => {
+  const res = await api.put("/categories/order", { orderedCategories });
+  return res.data;
+};
+
+
+//! -───────────── AI MENU ──────────────
 
 // apiCall.ts (or your equivalent API utility)
 
