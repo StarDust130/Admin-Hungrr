@@ -97,7 +97,7 @@ const formSchema = z.object({
 });
 ;
 
-type CafeSettingsFormValues = z.infer<typeof formSchema>;
+export type CafeSettingsFormValues = z.infer<typeof formSchema>;
 
 
 // --- MAIN COMPONENT ---
