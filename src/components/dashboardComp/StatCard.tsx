@@ -16,14 +16,14 @@ export const StatCard: FC<StatCardProps> = ({
   color,
   change,
 }) => (
-  <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 dark:hover:shadow-neutral-800/50">
+  <div className="bg-card border shadow-sm  rounded-xl p-5 transition-all duration-300 hover:shadow-lg hover:-translate-y-[1px] dark:hover:shadow-neutral-800/50">
     <div className="flex justify-between items-center mb-2">
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
         {title}
       </p>
       <Icon className="h-6 w-6" style={{ color }} />
     </div>
-    <p className="text-3xl font-bold text-gray-800 dark:text-white mb-1">
+    <p className="text-2xl font-bold text-gray-800 dark:text-white mb-1">
       {value}
     </p>
     <div className="flex items-center text-xs">
