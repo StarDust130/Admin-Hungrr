@@ -62,7 +62,7 @@ export default function HelpPage() {
         {/* Contact Button + Response Note */}
         <div className="flex flex-col items-center gap-1">
           <Link
-            href="mailto:csyadav0513@gmail.com"
+            href="https://mail.google.com/mail/u/0/?fs=1&tf=cm&source=mailto&to=csyadav0513@gmail.com&su=Support%20Needed%20for%20My%20Cafe&body=Hi%20Team%20Hungrr%2C%0A%0AI%20need%20assistance%20regarding%20my%20cafe%20on%20the%20Hungrr%20platform.%20Please%20help%20me%20with%20the%20following%20issue%3A%0A%0A%5BBriefly%20describe%20the%20issue%20here%5D%0A%0AThanks%2C%0A%5BYour%20Cafe%20Name%5D"
             target="_blank"
             className="inline-block"
           >
