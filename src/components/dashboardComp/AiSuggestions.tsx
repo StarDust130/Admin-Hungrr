@@ -1,5 +1,5 @@
 import { BrainCircuit } from "lucide-react";
-import { useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
 
 export const AiSuggestions: FC<{ cafeId: string | null }> = ({ cafeId }) => {
   const [insight, setInsight] = useState<string | null>(null);
