@@ -126,7 +126,7 @@ export const LiveOrders: FC<{
                     )}
 
                     {/* Meta */}
-                    <div className="flex justify-between text-[10px] text-muted-foreground border-t pt-2 mt-2">
+                    <div className="flex justify-between text-xs text-muted-foreground border-t pt-2 mt-2">
                       <div className="flex items-center gap-1 capitalize">
                         🍽️ <span>{order.orderType}</span>
                       </div>
@@ -137,8 +137,8 @@ export const LiveOrders: FC<{
                         <Clock className="w-3 h-3" />
                         <span>
                           {formatDistanceToNow(new Date(order.created_at), {
-                            addSuffix: true,
-                          })}
+                          addSuffix: true,
+                          }).replace("about ", "")}
                         </span>
                       </div>
                     </div>
