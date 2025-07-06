@@ -1,35 +1,43 @@
-import { Flame } from "lucide-react";
 import { FC } from "react";
+import { UtensilsCrossed } from "lucide-react";
 
 export const MostSoldItems: FC<{
   items: { name: string; count: number }[];
 }> = ({ items }) => (
-  <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl p-5 h-full">
-    <div className="flex items-center mb-4">
-      <Flame className="h-6 w-6 text-gray-500 dark:text-gray-400 mr-3" />
-      <h3 className="font-semibold text-lg text-gray-800 dark:text-white">
-        Hot Items Today
+  <div className="bg-card border rounded-xl p-5 h-full">
+    {/* Title */}
+    <div className="mb-4">
+      <h3 className="text-base font-semibold text-foreground mb-1">
+        🍽️ Top-Selling Dishes Today
       </h3>
+      <p className="text-xs text-muted-foreground">
+        An overview of your most popular dishes.
+      </p>
     </div>
+
+    {/* Content */}
     {items.length === 0 ? (
-      <div className="flex-grow flex items-center justify-center text-gray-500 dark:text-gray-400">
-        No items sold yet.
+      <div className="flex-grow flex items-center justify-center text-sm text-muted-foreground h-24">
+        No food sold yet.
       </div>
     ) : (
-      <div className="space-y-4">
+      <div className="space-y-3">
         {items.map((item) => (
-          <div key={item.name} className="flex items-center space-x-3">
-            <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-lg">
-              <Flame className="h-5 w-5 text-amber-500" />
-            </div>
-            <div className="flex-grow">
-              <p className="font-semibold text-sm text-gray-700 dark:text-gray-200">
+          <div
+            key={item.name}
+            className="flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-md bg-rose-100 dark:bg-rose-500/10">
+                <UtensilsCrossed className="w-4 h-4 text-rose-500" />
+              </div>
+              <p className="text-sm font-medium text-foreground truncate">
                 {item.name}
               </p>
             </div>
-            <p className="font-bold text-sm text-gray-800 dark:text-white">
-              {item.count}{" "}
-              <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+            <p className="text-sm font-semibold text-foreground">
+              {item.count}
+              <span className="ml-1 text-xs font-normal text-muted-foreground">
                 sold
               </span>
             </p>
