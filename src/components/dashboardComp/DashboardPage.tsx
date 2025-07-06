@@ -7,7 +7,7 @@ import * as Tone from "tone";
 import { Toaster, toast } from "sonner";
 
 // Local Imports
-import { Order, DashboardStats, OrderStatus as OrderStatusType } from "./types";
+import { Order, DashboardStats } from "./types";
 import { Header } from "./Header";
 import { StatCard } from "./StatCard";
 import { LiveOrders } from "./LiveOrders";
@@ -21,14 +21,12 @@ import { HourlyRevenueChart } from "./HourlyRevenueChart";
 
 // --- Configuration ---
 const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
+  process.env.NEXT_PUBLIC_SOCKET_URL;
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000/api";
+  process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 
-// ===================================================================================
-//  MAIN DASHBOARD PAGE (THE SOURCE OF TRUTH)
-// ===================================================================================
+
 const DashboardPage: FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [liveOrders, setLiveOrders] = useState<Order[]>([]);
@@ -95,7 +93,7 @@ const DashboardPage: FC = () => {
         volume: -15,
       }).toDestination();
       playerRef.current
-        .load()
+        .load("/soft.mp3")
         .catch((err) => console.error("Failed to load sound:", err));
     }
     const player = playerRef.current;
@@ -165,7 +163,7 @@ const DashboardPage: FC = () => {
   if (error) {
     return (
       <div className="min-h-screen p-4 sm:p-6 lg:p-8">
-        <ErrorDisplay message={error} onRetry={fetchAllData} />
+        <ErrorDisplay message={error}  />
       </div>
     );
   }
