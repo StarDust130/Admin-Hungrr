@@ -4,9 +4,6 @@ import {
   ShoppingCart,
   CheckCircle,
   Clock,
-  CreditCard,
-  Utensils,
-  Wallet,
   MoreHorizontal,
 } from "lucide-react";
 import {
@@ -18,10 +15,6 @@ import {
 } from "@/components/ui/select";
 import {
   Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button"; // Recommended for consistency
 import { Order, OrderStatus } from "./types";
@@ -58,26 +51,10 @@ export const LiveOrders: FC<{
     );
   };
 
-  // --- UI HELPER FUNCTIONS ---
-  const getOrderTypeIcon = (type: string) => {
-    return type === "dinein" ? (
-      <Utensils className="w-4 h-4" />
-    ) : (
-      <ShoppingCart className="w-4 h-4" />
-    );
-  };
-
-  const getPaymentMethodIcon = (method: string) => {
-    return method === "online" ? (
-      <CreditCard className="w-4 h-4" />
-    ) : (
-      <Wallet className="w-4 h-4" />
-    );
-  };
 
   // --- RENDER (UI UPDATED) ---
   return (
-    <Card className="flex flex-col h-[127vh] w-full rounded-2xl bg-background border border-border shadow-sm">
+    <Card className="flex flex-col h-[130vh] w-full rounded-2xl bg-background border border-border shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-1 py-3 border-b">
         <div className="flex items-center text-center justify-center w-full  gap-2">
@@ -159,13 +136,13 @@ export const LiveOrders: FC<{
                     {/* Footer */}
                     <div className="flex items-center justify-between mt-3">
                       <p className="text-sm font-semibold text-foreground">
-                        ₹{order.total_price}
+                        {formatCurrency(order.total_price)}
                       </p>
 
                       <div className="flex gap-1 items-center">
                         <Select
                           onValueChange={(value) =>
-                            handleStatusChange(order.id, value)
+                            handleStatusChange(order.id, value as OrderStatus)
                           }
                           defaultValue={order.status}
                         >
