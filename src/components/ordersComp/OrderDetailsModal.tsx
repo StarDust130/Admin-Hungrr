@@ -36,7 +36,7 @@ const formatTime = (dateString: string) =>
   });
 
 interface OrderDetailsModalProps {
-  orderId: number | null;
+  orderId: number | null | string;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
@@ -82,9 +82,12 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
           </div>
         ) : order ? (
           <div className="flex flex-col gap-4">
-            <div className="text-sm">
-              <strong>Customer:</strong> {order.customerName}
-            </div>
+            {order.customerName && (
+              <div className="text-sm">
+                <strong>Customer:</strong> {order.customerName}
+              </div>
+            )}
+
             <Table>
               <TableHeader>
                 <TableRow>

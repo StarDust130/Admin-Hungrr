@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import React, { useState, useEffect, FC, useCallback } from "react";
-import io, { Socket } from "socket.io-client";
+import React, { useState, useEffect, FC, useCallback, useRef } from "react";
+import { io, Socket } from "socket.io-client";
 import { DollarSign, ShoppingCart, Users, TrendingUp } from "lucide-react";
+import * as Tone from "tone";
+import { Toaster, toast } from "sonner";
 
 // Local Imports
-import { Order, DashboardStats } from "./types";
-
+import { Order, DashboardStats, OrderStatus as OrderStatusType } from "./types";
 import { Header } from "./Header";
 import { StatCard } from "./StatCard";
 import { LiveOrders } from "./LiveOrders";
-
 import { formatCurrency, ORDER_STATUS_CONFIG } from "@/lib/helper";
 import { DashboardLoadingSkeleton } from "./DashboardLoadingSkeleton";
 import { ErrorDisplay } from "./ErrorDisplay";
@@ -19,6 +19,16 @@ import { OrderStatusPieChart } from "./OrderStatusPieChart";
 import { MostSoldItems } from "./MostSoldItems";
 import { HourlyRevenueChart } from "./HourlyRevenueChart";
 
+// --- Configuration ---
+const SOCKET_URL =
+  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000/api";
+
+
+// ===================================================================================
+//  MAIN DASHBOARD PAGE (THE SOURCE OF TRUTH)
+// ===================================================================================
 const DashboardPage: FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [liveOrders, setLiveOrders] = useState<Order[]>([]);
@@ -28,23 +38,21 @@ const DashboardPage: FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCafeOpen, setIsCafeOpen] = useState<boolean>(true);
+  const playerRef = useRef<Tone.Player | null>(null);
 
-  const cafeId = "1"; // In a real app, get this from auth context or URL
+  const cafeId = "1";
 
-  const fetchAllData = useCallback(async (): Promise<Order[]> => {
+  const fetchAllData = useCallback(async () => {
     try {
       const [dashboardRes, ordersRes] = await Promise.all([
-        fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/dashboard/${cafeId}/today`
-        ),
-        fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/orders/cafe/${cafeId}?range=today&limit=50`
-        ),
+        fetch(`${API_BASE_URL}/dashboard/${cafeId}/today`),
+        fetch(`${API_BASE_URL}/orders/cafe/${cafeId}?range=today&limit=50`),
       ]);
 
       if (!dashboardRes.ok || !ordersRes.ok) {
-        console.error("Failed to refetch data.");
-        return [];
+        throw new Error(
+          "Failed to fetch dashboard data. Please try again later."
+        );
       }
 
       const dashboardData = await dashboardRes.json();
@@ -60,110 +68,95 @@ const DashboardPage: FC = () => {
       setHourlyRevenueData(dashboardData.hourlyRevenueData);
       setMostSoldItems(dashboardData.mostSoldItems);
       setLiveOrders(ordersData.orders);
-
-      return ordersData.orders; // ✅ FIXED: return orders here
     } catch (err: any) {
-      console.error("Error during data refetch:", err.message);
-      return [];
+      console.error("Error during data fetch:", err.message);
+      setError(err.message);
     }
   }, [cafeId]);
-  
 
   useEffect(() => {
     const initialFetch = async () => {
       setIsLoading(true);
       setError(null);
-      try {
-        const [dashboardRes, ordersRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/dashboard/${cafeId}/today`),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/orders/cafe/${cafeId}?range=today&limit=50`),
-        ]);
-
-        if (!dashboardRes.ok) {
-          const err = await dashboardRes.json();
-          throw new Error(err.message || "Failed to fetch dashboard data.");
-        }
-        if (!ordersRes.ok) {
-          const err = await ordersRes.json();
-          throw new Error(err.message || "Failed to fetch live orders.");
-        }
-
-        const dashboardData = await dashboardRes.json();
-        const ordersData = await ordersRes.json();
-
-        setStats(dashboardData.stats);
-        setOrderStatusData(
-          dashboardData.orderStatusData.map((d: any) => ({
-            ...d,
-            color: ORDER_STATUS_CONFIG[d.name.toLowerCase()]?.hex || "#ccc",
-          }))
-        );
-        setHourlyRevenueData(dashboardData.hourlyRevenueData);
-        setMostSoldItems(dashboardData.mostSoldItems);
-        setLiveOrders(ordersData.orders);
-        console.log("Live data fetched successfully.", ordersData);
-        
-      } catch (err: any) {
-        setError(err.message || "An unknown error occurred.");
-      } finally {
-        setIsLoading(false);
-      }
+      await fetchAllData();
+      setIsLoading(false);
     };
     initialFetch();
-  }, [cafeId]);
+  }, [fetchAllData]);
 
   useEffect(() => {
-    // FIX: Delay socket connection until after the initial data load is complete.
-    if (isLoading) return;
+    if (isLoading || !cafeId) return;
 
-    const socket: Socket = io(process.env.NEXT_PUBLIC_BACKEND_API_URL, {
+    if (!playerRef.current) {
+      playerRef.current = new Tone.Player({
+        url: "/soft.mp3",
+        autostart: false,
+        loop: false,
+        volume: -15,
+      }).toDestination();
+      playerRef.current
+        .load()
+        .catch((err) => console.error("Failed to load sound:", err));
+    }
+    const player = playerRef.current;
+
+    const socket: Socket = io(SOCKET_URL, {
+      reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 5000,
-      // The path option is often not needed if the server is set up with standard defaults.
-      // It can sometimes cause connection issues if misconfigured. Removing it simplifies the connection.
+      transports: ["websocket"],
     });
 
     socket.on("connect", () => {
-      console.log("Socket connected:", socket.id);
-      socket.emit("join_cafe_room", `cafe_${cafeId}`);
+      console.log("Dashboard Socket connected:", socket.id);
+      socket.emit("join_cafe_room", cafeId);
     });
 
-    socket.on("new_order", (newOrder: Order) => {
-      console.log("New order received:", newOrder);
-      // Add the new order to the top of the list for immediate visibility.
-      setLiveOrders((prev) => [newOrder, ...prev]);
-      // Refetch all dashboard stats to keep cards and charts in sync.
-      fetchAllData();
-    });
-
-    socket.on("order_status_updated", (updatedOrder: Order) => {
-      console.log("Order update received:", updatedOrder);
-      // Update the specific order in the list.
+    socket.on("new_order", async (newOrder: Order) => {
+      console.log("Dashboard: New order received");
+      if (Tone.context.state !== "running") await Tone.start();
+      player.start();
+      // Only add to live list, don't refetch stats yet.
       setLiveOrders((prev) =>
-        prev.map((o) =>
-          o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o
+        [newOrder, ...prev].sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
       );
-      // Refetch all dashboard stats to keep cards and charts in sync.
+    });
+
+    socket.on("order_updated", (updatedOrder: Order) => {
+      console.log("Dashboard: Order update received");
+      // Only refetch all data if the order is accepted or paid, as this affects stats.
+      if (updatedOrder.status === "accepted" || updatedOrder.paid) {
+        fetchAllData();
+      } else {
+        // Otherwise, just update the live orders list.
+        setLiveOrders((prev) =>
+          prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o))
+        );
+      }
+    });
+
+    socket.on("order_cancelled", () => {
+      console.log("Dashboard: Order cancellation received");
+      toast.info("An order was canceled by the user.");
+      // Refetch all data to update stats and remove the order from the live list.
       fetchAllData();
     });
 
-    socket.on("disconnect", () => console.log("Socket disconnected"));
+    socket.on("disconnect", () => console.log("Dashboard Socket disconnected"));
+    socket.on("connect_error", (err) =>
+      console.error("Socket connection error:", err.message)
+    );
 
-    socket.on("connect_error", (err) => {
-      console.error("Socket connection error:", err.message);
-    });
-
-    // Cleanup function to disconnect the socket when the component unmounts.
     return () => {
       socket.disconnect();
     };
-    // FIX: The dependency array is simplified. `fetchAllData` is stable due to useCallback.
   }, [cafeId, fetchAllData, isLoading]);
 
   if (isLoading) {
     return (
-      <div className=" min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
         <DashboardLoadingSkeleton />
       </div>
     );
@@ -171,18 +164,19 @@ const DashboardPage: FC = () => {
 
   if (error) {
     return (
-      <div className=" min-h-screen p-4 sm:p-6 lg:p-8">
-        <ErrorDisplay message={error} />
+      <div className="min-h-screen p-4 sm:p-6 lg:p-8">
+        <ErrorDisplay message={error} onRetry={fetchAllData} />
       </div>
     );
   }
 
   return (
-    <div className=" p-4 sm:p-6 lg:p-8 ">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <Toaster richColors position="top-center" />
       <div className="mx-auto max-w-screen-2xl">
         <Header isOpen={isCafeOpen} setIsOpen={setIsCafeOpen} />
         <main className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-100px)] mb-20">
-          <div className="xl:col-span-2 space-y-6 h-full">
+          <div className="xl:col-span-2 space-y-6 h-full overflow-y-auto">
             {stats && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -224,12 +218,8 @@ const DashboardPage: FC = () => {
               </>
             )}
           </div>
-          <div className="h-full flex flex-col mb-20 ">
-            <LiveOrders
-              orders={liveOrders}
-              setOrders={setLiveOrders}
-              cafeId={cafeId}
-            />
+          <div className="h-full flex flex-col mb-20">
+            <LiveOrders orders={liveOrders} cafeId={cafeId} />
           </div>
         </main>
       </div>
@@ -237,5 +227,6 @@ const DashboardPage: FC = () => {
   );
 };
 
-
 export default DashboardPage;
+
+

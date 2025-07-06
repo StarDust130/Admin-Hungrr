@@ -35,3 +35,9 @@ export interface DashboardStats {
 export interface OrderStatusConfig {
   [key: string]: { label: string; color: string; hex: string };
 }
+
+export interface LiveOrdersProps {
+  orders: Order[];
+  cafeId: string | null;
+  // This component no longer needs setOrders, as the parent handles all updates.
+}
