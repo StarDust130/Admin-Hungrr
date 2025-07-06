@@ -4,7 +4,7 @@ import {
   ShoppingCart,
   CheckCircle,
   Clock,
-  MoreHorizontal,
+  Info,
 } from "lucide-react";
 import {
   Select,
@@ -22,6 +22,7 @@ import { api } from "@/lib/axios";
 import { formatCurrency, ORDER_STATUS_CONFIG } from "@/lib/helper";
 import { formatDistanceToNow } from "date-fns"; // For human-readable time
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export const LiveOrders: FC<{
   orders: Order[];
@@ -66,7 +67,7 @@ export const LiveOrders: FC<{
       </div>
 
       {/* Scrollable Order List */}
-      <div className="overflow-y-auto px-4 pt-4 pb-6 space-y-4 flex-1 min-h-0">
+      <div className="overflow-y-auto px-4   space-y-4 flex-1 min-h-0">
         <AnimatePresence>
           {orders.length > 0 ? (
             orders.map((order) => {
@@ -84,9 +85,7 @@ export const LiveOrders: FC<{
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="relative bg-card dark:bg-[#1b1b1b] rounded-lg border border-border shadow-sm hover:shadow-md transition p-3">
-                    <MoreHorizontal className="absolute top-2 right-2 w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground" />
-
+                  <div className=" rounded-lg border border-border shadow-sm hover:shadow-md transition p-3">
                     {/* Top */}
                     <div className="flex justify-between items-start mb-1">
                       <div>
@@ -97,15 +96,26 @@ export const LiveOrders: FC<{
                           #{order.publicId}
                         </p>
                       </div>
-                      <span
-                        className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: `${statusInfo.hex}1A`,
-                          color: statusInfo.hex,
-                        }}
-                      >
-                        {statusInfo.label}
-                      </span>
+                      <div className="flex items-center justify-end gap-1">
+                        <span
+                          className="text-[10px] font-medium mr-2 px-2 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: `${statusInfo.hex}1A`,
+                            color: statusInfo.hex,
+                          }}
+                        >
+                          {statusInfo.label}
+                        </span>
+
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className=" w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View Order Info in Deatail</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
 
                     {/* Items */}
