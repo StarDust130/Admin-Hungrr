@@ -87,14 +87,14 @@ const DashboardPage: FC = () => {
 
     if (!playerRef.current) {
       playerRef.current = new Tone.Player({
-        url: "/soft.mp3",
-        autostart: false,
-        loop: false,
-        volume: -15,
+      url: "/soft.mp3",
+      autostart: false,
+      loop: false,
+      volume: 1,
       }).toDestination();
       playerRef.current
-        .load("/soft.mp3")
-        .catch((err) => console.error("Failed to load sound:", err));
+      .load("/soft.mp3")
+      .catch((err) => console.error("Failed to load sound:", err));
     }
     const player = playerRef.current;
 
