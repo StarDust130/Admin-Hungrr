@@ -1,8 +1,14 @@
 import React, { FC } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, CheckCircle } from "lucide-react";
-
-
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ShoppingCart,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  Utensils,
+  Wallet,
+  MoreHorizontal,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -10,139 +16,227 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button"; // Recommended for consistency
 import { Order, OrderStatus } from "./types";
 import { api } from "@/lib/axios";
 import { formatCurrency, ORDER_STATUS_CONFIG } from "@/lib/helper";
-
-
+import { formatDistanceToNow } from "date-fns"; // For human-readable time
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
 
 export const LiveOrders: FC<{
   orders: Order[];
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
-  cafeId: string | null;
+  cafeId: string | null; // cafeId is unused in this component but kept for props consistency
 }> = ({ orders, setOrders }) => {
+  // --- LOGIC (UNCHANGED) ---
   const handleStatusChange = async (
     orderId: string,
     newStatus: OrderStatus
   ) => {
     try {
+      // Note: This optimistic UI update is now handled by the real-time subscription
+      // in the parent component. This API call informs the backend.
       await api.patch(`/order/${orderId}/status`, { status: newStatus });
     } catch (error) {
       console.error("Failed to update order status:", error);
+      // Optionally, revert the UI change on failure
     }
   };
 
   const handlePaidToggle = async (order: Order) => {
-    console.log("Toggling paid status for", order.id);
+    // Note: This is an optimistic update. The change is reflected instantly in the UI.
+    // You might want to add a backend call here as well.
     setOrders(
       orders.map((o) => (o.id === order.id ? { ...o, paid: !o.paid } : o))
     );
   };
 
+  // --- UI HELPER FUNCTIONS ---
+  const getOrderTypeIcon = (type: string) => {
+    return type === "dinein" ? (
+      <Utensils className="w-4 h-4" />
+    ) : (
+      <ShoppingCart className="w-4 h-4" />
+    );
+  };
+
+  const getPaymentMethodIcon = (method: string) => {
+    return method === "online" ? (
+      <CreditCard className="w-4 h-4" />
+    ) : (
+      <Wallet className="w-4 h-4" />
+    );
+  };
+
+  // --- RENDER (UI UPDATED) ---
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl h-[calc(100vh-10rem)] flex flex-col">
-      <h3 className="p-5 border-b border-gray-200 dark:border-neutral-800 font-semibold text-xl tracking-tight text-gray-800 dark:text-white">
-        🍽️ Live Kitchen Orders
-      </h3>
-      <div className="flex-grow p-4 space-y-4 overflow-y-auto">
+    <Card className="flex flex-col h-[127vh] w-full rounded-2xl bg-background border border-border shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between px-1 py-3 border-b">
+        <div className="flex items-center text-center justify-center w-full  gap-2">
+          <span className="text-xl">🍽️</span>
+          <h3 className="text-xl  font-semibold text-foreground">
+            Live Orders
+          </h3>
+        </div>
+      </div>
+
+      {/* Scrollable Order List */}
+      <div className="overflow-y-auto px-4 pt-4 pb-6 space-y-4 flex-1 min-h-0">
         <AnimatePresence>
           {orders.length > 0 ? (
             orders.map((order) => {
               const statusInfo = ORDER_STATUS_CONFIG[order.status];
-              const itemsSummary =
-                order.order_items
-                  ?.map((oi) => `${oi.quantity}x ${oi.item.name}`)
-                  .join(", ") || "";
+              const itemsSummary = order.order_items
+                ?.map((oi) => `${oi.quantity}x ${oi.item.name}`)
+                .join(", ");
 
               return (
                 <motion.div
                   key={order.id}
                   layout
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
-                  className={`rounded-xl border-l-4 p-4 transition-shadow hover:shadow-md bg-white dark:bg-neutral-800/50`}
-                  style={{ borderColor: statusInfo.hex }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-gray-800 dark:text-white">
-                        Table <span className="text-lg">{order.tableNo}</span>
-                      </p>
-                      <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                        #{order.publicId}
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-1 italic pt-1">
-                        {itemsSummary}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-gray-800 dark:text-white">
-                        {formatCurrency(order.total_price)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                    <Select
-                      onValueChange={(value: OrderStatus) =>
-                        handleStatusChange(order.id, value)
-                      }
-                      defaultValue={order.status}
-                    >
-                      <SelectTrigger
-                        className={`h-9 text-sm w-full sm:w-[160px] rounded-md border-gray-300 dark:border-neutral-700 focus:ring-2`}
+                  <div className="relative bg-card dark:bg-[#1b1b1b] rounded-lg border border-border shadow-sm hover:shadow-md transition p-3">
+                    <MoreHorizontal className="absolute top-2 right-2 w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground" />
+
+                    {/* Top */}
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          Table #{order.tableNo}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">
+                          #{order.publicId}
+                        </p>
+                      </div>
+                      <span
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-full"
                         style={{
+                          backgroundColor: `${statusInfo.hex}1A`,
                           color: statusInfo.hex,
-                          borderColor: statusInfo.hex,
                         }}
                       >
-                        <SelectValue placeholder="Update Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(ORDER_STATUS_CONFIG).map(
-                          ([status, { label, hex }]) => (
-                            <SelectItem
-                              key={status}
-                              value={status}
-                              style={{ color: hex }}
+                        {statusInfo.label}
+                      </span>
+                    </div>
+
+                    {/* Items */}
+                    {itemsSummary && (
+                      <p className="text-xs text-muted-foreground mb-1 line-clamp-2">
+                        {itemsSummary}
+                      </p>
+                    )}
+
+                    {/* Meta */}
+                    <div className="flex justify-between text-[10px] text-muted-foreground border-t pt-2 mt-2">
+                      <div className="flex items-center gap-1 capitalize">
+                        🍽️ <span>{order.orderType}</span>
+                      </div>
+                      <div className="flex items-center gap-1 capitalize">
+                        💳 <span>{order.payment_method}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>
+                          {formatDistanceToNow(new Date(order.created_at), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between mt-3">
+                      <p className="text-sm font-semibold text-foreground">
+                        ₹{order.total_price}
+                      </p>
+
+                      <div className="flex gap-1 items-center">
+                        <Select
+                          onValueChange={(value) =>
+                            handleStatusChange(order.id, value)
+                          }
+                          defaultValue={order.status}
+                        >
+                          <SelectTrigger className="h-7 text-[10px] w-[88px] rounded bg-muted border border-border">
+                            <SelectValue placeholder="Update" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(ORDER_STATUS_CONFIG).map(
+                              ([status, { label, hex }]) => (
+                                <SelectItem
+                                  key={status}
+                                  value={status}
+                                  style={{ color: hex }}
+                                >
+                                  {label}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+
+                        {/* Confirm paid */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className={`h-7 w-7 p-0 rounded-full border ${
+                                order.paid
+                                  ? "bg-emerald-100 dark:bg-emerald-900/30 border-emerald-500 text-emerald-600"
+                                  : "hover:bg-muted dark:hover:bg-neutral-700"
+                              }`}
                             >
-                              {label}
-                            </SelectItem>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <button
-                      onClick={() => handlePaidToggle(order)}
-                      className={`h-9 text-sm w-full sm:w-auto flex-grow rounded-md border flex items-center justify-center gap-2 transition font-semibold ${
-                        order.paid
-                          ? "border-emerald-500 text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20"
-                          : "border-gray-300 dark:border-neutral-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-800"
-                      }`}
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      {order.paid ? "Paid" : "Mark as Paid"}
-                    </button>
+                              <CheckCircle className="w-3.5 h-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Mark as Paid?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure the customer has paid?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handlePaidToggle(order)}
+                              >
+                                Confirm Paid
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               );
             })
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400"
-            >
-              <ShoppingCart size={48} className="mb-4" />
-              <h4 className="font-semibold text-lg">No Live Orders</h4>
-              <p className="text-sm">
-                New orders will appear here automatically.
-              </p>
-            </motion.div>
+            <div className="text-center text-muted-foreground py-10 text-sm">
+              <ShoppingCart
+                className="mx-auto mb-2"
+                size={28}
+                strokeWidth={1.5}
+              />
+              <p>No live orders</p>
+            </div>
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </Card>
   );
 };
-
