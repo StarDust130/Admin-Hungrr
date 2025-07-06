@@ -229,7 +229,6 @@ const DashboardPage: FC = () => {
               orders={liveOrders}
               setOrders={setLiveOrders}
               cafeId={cafeId}
-              fetchAllData={fetchAllData}
             />
           </div>
         </main>
