@@ -2,10 +2,10 @@ import React, { FC } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ShoppingCart,
-  CheckCircle,
   Clock,
   Info,
   RefreshCcw,
+  BadgeCheck,
 } from "lucide-react";
 import {
   Select,
@@ -24,6 +24,7 @@ import { formatCurrency, ORDER_STATUS_CONFIG } from "@/lib/helper";
 import { formatDistanceToNow } from "date-fns"; // For human-readable time
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { cn } from "@/lib/utils";
 
 export const LiveOrders: FC<{
   orders: Order[];
@@ -166,15 +167,16 @@ export const LiveOrders: FC<{
                         {formatCurrency(order.total_price)}
                       </p>
 
-                      <div className="flex gap-1 items-center">
+                      <div className="flex items-center gap-2">
+                        {/* Order Status Dropdown */}
                         <Select
                           onValueChange={(value) =>
                             handleStatusChange(order.id, value as OrderStatus)
                           }
                           defaultValue={order.status}
                         >
-                          <SelectTrigger className="h-7 text-[10px] w-[88px] rounded bg-muted border border-border">
-                            <SelectValue placeholder="Update" />
+                          <SelectTrigger className="h-8 w-[100px] rounded-md bg-muted border border-border px-2 text-[11px] font-medium">
+                            <SelectValue placeholder="Update Status" />
                           </SelectTrigger>
                           <SelectContent>
                             {Object.entries(ORDER_STATUS_CONFIG).map(
@@ -182,6 +184,7 @@ export const LiveOrders: FC<{
                                 <SelectItem
                                   key={status}
                                   value={status}
+                                  className="text-xs"
                                   style={{ color: hex }}
                                 >
                                   {label}
@@ -191,34 +194,53 @@ export const LiveOrders: FC<{
                           </SelectContent>
                         </Select>
 
-                        {/* Confirm paid */}
+                        {/* Confirm Paid Button with Dialog */}
                         <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className={`h-7 w-7 p-0 rounded-full border ${
-                                order.paid
-                                  ? "bg-emerald-100 dark:bg-emerald-900/30 border-emerald-500 text-emerald-600"
-                                  : "hover:bg-muted dark:hover:bg-neutral-700"
-                              }`}
-                            >
-                              <CheckCircle className="w-3.5 h-3.5" />
-                            </Button>
-                          </AlertDialogTrigger>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className={cn(
+                                    "h-8 w-8 p-0 rounded-full border transition-all",
+                                    order.paid
+                                      ? "bg-emerald-100 text-emerald-600 border-emerald-400 dark:bg-emerald-900/30"
+                                      : "hover:bg-muted text-muted-foreground border-border"
+                                  )}
+                                  aria-label="Mark order as paid"
+                                >
+                                  <BadgeCheck className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p>
+                                {order.paid
+                                  ? "💸 Payment received"
+                                  : "Mark this order as paid"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Mark as Paid?</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                💰 Confirm Payment Received?
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure the customer has paid?
+                                Has the customer completed the payment for this
+                                order? <br />
+                                Once confirmed, this will mark the order as{" "}
+                                <strong>paid</strong> ✅
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogCancel>❌ Not Yet</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handlePaidToggle(order)}
                               >
-                                Confirm Paid
+                                👍 Yes, Paid!
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
