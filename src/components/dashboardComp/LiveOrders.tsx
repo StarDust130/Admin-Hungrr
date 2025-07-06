@@ -5,6 +5,7 @@ import {
   CheckCircle,
   Clock,
   Info,
+  RefreshCcw,
 } from "lucide-react";
 import {
   Select,
@@ -57,13 +58,29 @@ export const LiveOrders: FC<{
   return (
     <Card className="flex flex-col h-[130vh] w-full rounded-2xl bg-background border border-border shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between px-1 py-3 border-b">
-        <div className="flex items-center text-center justify-center w-full  gap-2">
-          <span className="text-xl">🍽️</span>
-          <h3 className="text-xl  font-semibold text-foreground">
-            Live Orders
-          </h3>
+      <div className="px-4 pt-2 pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-base font-semibold">
+            🧾 <span>Live Orders</span>
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="text-muted-foreground hover:text-foreground transition cursor-pointer"
+                aria-label="Refresh Orders"
+              >
+                <RefreshCcw size={18} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>🔄 Refresh Orders</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          See new customer orders as they arrive.
+        </p>
+        <div className="mt-3 border-b border-border" />
       </div>
 
       {/* Scrollable Order List */}
@@ -137,7 +154,7 @@ export const LiveOrders: FC<{
                         <Clock className="w-3 h-3" />
                         <span>
                           {formatDistanceToNow(new Date(order.created_at), {
-                          addSuffix: true,
+                            addSuffix: true,
                           }).replace("about ", "")}
                         </span>
                       </div>
