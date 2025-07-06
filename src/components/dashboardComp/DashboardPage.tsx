@@ -90,7 +90,7 @@ const DashboardPage: FC = () => {
       url: "/soft.mp3",
       autostart: false,
       loop: false,
-      volume: 1,
+      volume: -10,
       }).toDestination();
       playerRef.current
       .load("/soft.mp3")
