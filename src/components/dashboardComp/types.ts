@@ -15,6 +15,9 @@ export interface Order {
   paid: boolean;
   order_items: { item: { name: string }; quantity: number }[];
   created_at: string;
+  orderType: string;
+  payment_method: string;
+  
 }
 
 export interface Stat {
