@@ -291,7 +291,7 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
                 );
               })
             ) : (
-              <div className="text-center text-muted-foreground py-10 text-sm absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-center text-muted-foreground py-10 text-sm  flex flex-col items-center justify-center">
                 <ShoppingCart
                   className="mx-auto mb-2"
                   size={28}
