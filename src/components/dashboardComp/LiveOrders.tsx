@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ShoppingCart,
@@ -25,14 +25,18 @@ import { formatDistanceToNow } from "date-fns"; // For human-readable time
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+
+
 
 export const LiveOrders: FC<{
   orders: Order[];
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   cafeId: string | null; // cafeId is unused in this component but kept for props consistency
-  fetchAllData: () => Promise<void>; // Function to refetch all data
+  fetchAllData: () => Promise<Order[]>; // Function to refetch all data returns fresh orders
 }> = ({ orders, setOrders, fetchAllData }) => {
-  const [loading, setLoading] = React.useState(false);
+  const [showNoNewOrdersAlert, setShowNoNewOrdersAlert] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // --- LOGIC  ---
   const handleStatusChange = async (
@@ -57,9 +61,50 @@ export const LiveOrders: FC<{
     );
   };
 
+  const handleRefreshClick = async () => {
+    try {
+      setLoading(true);
+      const prev = [...orders];
+
+      const latest = await fetchAllData(); // latest is Order[]
+
+      const isSame =
+        JSON.stringify(prev.map((o) => o.id).sort()) ===
+        JSON.stringify(latest.map((o) => o.id).sort());
+
+      if (isSame) {
+        setShowNoNewOrdersAlert(true);
+        setTimeout(() => setShowNoNewOrdersAlert(false), 3000);
+      }
+    } catch (err) {
+      console.error("Refresh failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- RENDER (UI UPDATED) ---
   return (
     <Card className="flex flex-col h-[130vh] w-full rounded-2xl bg-background border border-border shadow-sm">
+      <AnimatePresence>
+        {showNoNewOrdersAlert && (
+          <motion.div
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md"
+          >
+            <Alert className="shadow-md border border-border bg-background">
+              <Info className="h-4 w-4 text-blue-500" />
+              <AlertTitle>🚫 No New Orders</AlertTitle>
+              <AlertDescription>
+                You’re already up-to-date! No new orders found.
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Header */}
       <div className="px-4 pt-2">
         <div className="flex items-center justify-between">
@@ -67,29 +112,24 @@ export const LiveOrders: FC<{
             🧾 <span>Live Orders</span>
           </div>
           <Tooltip>
-  <TooltipTrigger asChild>
-    <button
-      onClick={async () => {
-        setLoading(true);
-        await fetchAllData();
-        setLoading(false);
-      }}
-      className={cn(
-        "transition-colors cursor-pointer p-1 rounded-full",
-        loading
-          ? "text-foreground animate-spin"
-          : "text-muted-foreground hover:text-foreground"
-      )}
-      aria-label="Refresh Orders"
-    >
-      <RefreshCcw size={18} />
-    </button>
-  </TooltipTrigger>
-  <TooltipContent>
-    <p>🔄 Refresh Orders</p>
-  </TooltipContent>
-</Tooltip>
-
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleRefreshClick}
+                className={cn(
+                  "transition-colors cursor-pointer p-1 rounded-full",
+                  loading
+                    ? "bg-muted animate-spin text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                aria-label="Refresh Orders"
+              >
+                <RefreshCcw size={18} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>🔄 Refresh Orders</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           See new customer orders as they arrive.

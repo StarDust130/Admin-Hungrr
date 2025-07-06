@@ -31,16 +31,20 @@ const DashboardPage: FC = () => {
 
   const cafeId = "1"; // In a real app, get this from auth context or URL
 
-  const fetchAllData = useCallback(async () => {
+  const fetchAllData = useCallback(async (): Promise<Order[]> => {
     try {
       const [dashboardRes, ordersRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/dashboard/${cafeId}/today`),
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/orders/cafe/${cafeId}?range=today&limit=50`),
+        fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/dashboard/${cafeId}/today`
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/orders/cafe/${cafeId}?range=today&limit=50`
+        ),
       ]);
 
       if (!dashboardRes.ok || !ordersRes.ok) {
         console.error("Failed to refetch data.");
-        return;
+        return [];
       }
 
       const dashboardData = await dashboardRes.json();
@@ -56,10 +60,14 @@ const DashboardPage: FC = () => {
       setHourlyRevenueData(dashboardData.hourlyRevenueData);
       setMostSoldItems(dashboardData.mostSoldItems);
       setLiveOrders(ordersData.orders);
+
+      return ordersData.orders; // ✅ FIXED: return orders here
     } catch (err: any) {
       console.error("Error during data refetch:", err.message);
+      return [];
     }
   }, [cafeId]);
+  
 
   useEffect(() => {
     const initialFetch = async () => {
