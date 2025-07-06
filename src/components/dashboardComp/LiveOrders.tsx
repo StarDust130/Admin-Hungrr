@@ -30,8 +30,11 @@ export const LiveOrders: FC<{
   orders: Order[];
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   cafeId: string | null; // cafeId is unused in this component but kept for props consistency
-}> = ({ orders, setOrders }) => {
-  // --- LOGIC (UNCHANGED) ---
+  fetchAllData: () => Promise<void>; // Function to refetch all data
+}> = ({ orders, setOrders, fetchAllData }) => {
+  const [loading, setLoading] = React.useState(false);
+
+  // --- LOGIC  ---
   const handleStatusChange = async (
     orderId: string,
     newStatus: OrderStatus
@@ -54,7 +57,6 @@ export const LiveOrders: FC<{
     );
   };
 
-
   // --- RENDER (UI UPDATED) ---
   return (
     <Card className="flex flex-col h-[130vh] w-full rounded-2xl bg-background border border-border shadow-sm">
@@ -65,18 +67,29 @@ export const LiveOrders: FC<{
             🧾 <span>Live Orders</span>
           </div>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                className="text-muted-foreground hover:text-foreground transition cursor-pointer"
-                aria-label="Refresh Orders"
-              >
-                <RefreshCcw size={18} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>🔄 Refresh Orders</p>
-            </TooltipContent>
-          </Tooltip>
+  <TooltipTrigger asChild>
+    <button
+      onClick={async () => {
+        setLoading(true);
+        await fetchAllData();
+        setLoading(false);
+      }}
+      className={cn(
+        "transition-colors cursor-pointer p-1 rounded-full",
+        loading
+          ? "text-foreground animate-spin"
+          : "text-muted-foreground hover:text-foreground"
+      )}
+      aria-label="Refresh Orders"
+    >
+      <RefreshCcw size={18} />
+    </button>
+  </TooltipTrigger>
+  <TooltipContent>
+    <p>🔄 Refresh Orders</p>
+  </TooltipContent>
+</Tooltip>
+
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           See new customer orders as they arrive.
