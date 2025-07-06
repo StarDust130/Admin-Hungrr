@@ -59,7 +59,7 @@ export const LiveOrders: FC<{
   return (
     <Card className="flex flex-col h-[130vh] w-full rounded-2xl bg-background border border-border shadow-sm">
       {/* Header */}
-      <div className="px-4 pt-2 pb-3">
+      <div className="px-4 pt-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-base font-semibold">
             🧾 <span>Live Orders</span>
@@ -85,7 +85,7 @@ export const LiveOrders: FC<{
       </div>
 
       {/* Scrollable Order List */}
-      <div className="overflow-y-auto px-4   space-y-4 flex-1 min-h-0">
+      <div className="overflow-y-auto px-3 space-y-4 flex-1 min-h-0">
         <AnimatePresence>
           {orders.length > 0 ? (
             orders.map((order) => {
