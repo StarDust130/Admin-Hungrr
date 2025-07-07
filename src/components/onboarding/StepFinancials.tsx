@@ -9,13 +9,6 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { OnboardingData } from "./types";
 
 const inputFocusRing =
@@ -26,37 +19,33 @@ interface StepFinancialsProps {
 }
 
 export const StepFinancials: React.FC<StepFinancialsProps> = ({ control }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-    <div className="md:col-span-2">
-      <FormField
-        name="payment_url"
-        control={control}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>UPI ID</FormLabel>
-            <FormControl>
-              <Input
-                placeholder="e.g. 9687456813@ybl"
-                className={inputFocusRing}
-                {...field}
-              />
-            </FormControl>
-            <FormDescription>
-              💸 Add your UPI ID — customers will use this to pay you. ✅
-              Double-check it!
-            </FormDescription>
-
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </div>
-
+  <div className="flex w-full flex-col items-start gap-4">
+    <FormField
+      name="payment_url"
+      control={control}
+      render={({ field }) => (
+        <FormItem className="w-full">
+          <FormLabel>UPI ID</FormLabel>
+          <FormControl>
+            <Input
+              placeholder="e.g. 9687456813@ybl"
+              className={inputFocusRing}
+              {...field}
+            />
+          </FormControl>
+          <FormDescription>
+            💸 Add your UPI ID — customers will use this to pay you. ✅
+            Double-check it!
+          </FormDescription>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
     <FormField
       name="gstNo"
       control={control}
       render={({ field }) => (
-        <FormItem>
+        <FormItem className="w-full">
           <FormLabel>GST Number (Optional)</FormLabel>
           <FormControl>
             <Input
@@ -67,36 +56,6 @@ export const StepFinancials: React.FC<StepFinancialsProps> = ({ control }) => (
           </FormControl>
           <FormDescription>
             🧾 Add only if you have a GSTIN for billing.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-
-    <FormField
-      name="gstPercentage"
-      control={control}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>GST Rate</FormLabel>
-          <Select
-            onValueChange={(value) => field.onChange(parseInt(value))}
-            defaultValue={String(field.value)}
-          >
-            <FormControl>
-              <SelectTrigger className={inputFocusRing}>
-                <SelectValue placeholder="Select GST %" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="5">5% (Most cafes)</SelectItem>
-              <SelectItem value="12">12%</SelectItem>
-              <SelectItem value="18">18%</SelectItem>
-              <SelectItem value="28">28%</SelectItem>
-            </SelectContent>
-          </Select>
-          <FormDescription>
-            📊 Default GST applied to your menu items.
           </FormDescription>
           <FormMessage />
         </FormItem>
