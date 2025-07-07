@@ -192,6 +192,7 @@ export function MenuItemDialog({
                 }
                 placeholder="e.g. Masala Dosa"
                 required
+                maxLength={50}
               />
             </div>
             <div className="space-y-2">
@@ -311,27 +312,43 @@ export function MenuItemDialog({
                   setFormData((p) => ({ ...p, isSpecial: checked }))
                 }
               />
-              <Label htmlFor="isSpecial">Mark as a &quot;Special&quot; 🌟</Label>
+              <Label htmlFor="isSpecial">
+                Mark as a &quot;Special&quot; 🌟
+              </Label>
             </div>
           </div>
 
-          <DialogFooter className="md:col-span-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={isSaving || isUploading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSaving || isUploading || !formData.categoryId}
-            >
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </DialogFooter>
+          {/* Footer */}
+          <div className="md:col-span-2 pt-4 flex justify-between items-end border-t ">
+            {/* Pro Tips on the left */}
+            <div className="text-xs text-muted-foreground space-y-1 hidden md:block text-left">
+              <p className="font-semibold">✨ Pro Tips:</p>
+              <ul className="list-disc list-inside">
+                <li>Keep item names short and sweet.</li>
+                <li>High-quality images boost sales.</li>
+                <li>Use &apos;Special&apos; for your signature dishes.</li>
+              </ul>
+            </div>
+
+            {/* Action Buttons on the right */}
+            <DialogFooter className="p-0 bg-transparent">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+                disabled={isSaving || isUploading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSaving || isUploading || !formData.categoryId}
+              >
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
