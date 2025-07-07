@@ -187,7 +187,7 @@ export default function Onboarding() {
     if (clerkSuccess && backendSuccess) {
       await user?.reload();
       setStep((prev) => prev + 1);
-      setTimeout(() => router.push("/dashboard"), 1500);
+      setTimeout(() => router.push("/menu"), 1500);
     }
   };
 
