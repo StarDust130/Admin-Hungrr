@@ -34,7 +34,7 @@ export const StepWelcome: React.FC<StepWelcomeProps> = ({
           <FormLabel>Cafe Name</FormLabel>
           <FormControl>
             <Input
-              placeholder="e.g. Ek Saath"
+              placeholder="e.g. Foodgasm"
               {...field}
               className={inputFocusRing}
               onChange={(e) => {
@@ -59,7 +59,7 @@ export const StepWelcome: React.FC<StepWelcomeProps> = ({
                 hungrr.in/menu/
               </span>
               <Input
-                placeholder="ek-saath"
+                placeholder="foodgasm"
                 className={cn("rounded-l-none", inputFocusRing)}
                 {...field}
               />
@@ -81,7 +81,7 @@ export const StepWelcome: React.FC<StepWelcomeProps> = ({
           <FormLabel>Tagline (Optional)</FormLabel>
           <FormControl>
             <Textarea
-              placeholder="e.g. Ek Saath Specialty Coffee & Pizzeria"
+              placeholder="e.g. Where every bite is a foodgasm!"
               className={inputFocusRing}
               {...field}
             />

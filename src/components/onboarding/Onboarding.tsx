@@ -84,7 +84,7 @@ export default function Onboarding() {
 
   // Effect to show the auto-fill button when user types "Ek Saath"
   useEffect(() => {
-    if (watchedName && watchedName.toLowerCase().startsWith("ek s")) {
+    if (watchedName && watchedName.toLowerCase().startsWith("ek saath")) {
       setShowAutoFillButton(true);
     } else {
       setShowAutoFillButton(false);
