@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { format } from "date-fns";
@@ -109,7 +110,7 @@ const OrdersPage = () => {
       });
       fetchStats();
     } catch (error: any) {
-      console.error("Failed to update status, rolling back UI.");
+      console.error("Failed to update status, rolling back UI.", error);
       fetchOrders();
     }
   };

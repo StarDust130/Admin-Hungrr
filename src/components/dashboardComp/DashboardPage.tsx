@@ -38,7 +38,7 @@ const DashboardPage: FC = () => {
   const [isCafeOpen, setIsCafeOpen] = useState<boolean>(true);
   const playerRef = useRef<Tone.Player | null>(null);
 
-  const cafeId = "1";
+  const cafeId = localStorage.getItem("cafeId") ?? "";
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -172,7 +172,7 @@ const DashboardPage: FC = () => {
     <div className="p-4 sm:p-6 lg:p-8">
       <Toaster richColors position="top-center" />
       <div className="mx-auto max-w-screen-2xl">
-        <Header isOpen={isCafeOpen} setIsOpen={setIsCafeOpen} />
+        <Header isOpen={isCafeOpen} setIsOpen={setIsCafeOpen} cafeId={cafeId} />
         <main className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-100px)] mb-20">
           <div className="xl:col-span-2 space-y-6 h-full overflow-y-auto">
             {stats && (
