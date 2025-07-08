@@ -12,6 +12,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "../ui/button";
+import { useCafe } from "@/context/CafeContext";
 
 interface HeaderProps {
   cafeId: number | string; // Use number or string based on your API
@@ -21,6 +22,7 @@ interface HeaderProps {
 
 export const Header: FC<HeaderProps> = ({ cafeId, setIsOpen, isOpen }) => {
   const [time, setTime] = useState(new Date());
+  const { cafe } = useCafe();
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -44,9 +46,11 @@ export const Header: FC<HeaderProps> = ({ cafeId, setIsOpen, isOpen }) => {
       {/* Dashboard Title */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-800 dark:text-white">
-          ☕ Café Dashboard
+          📈 {cafe?.name || "Café"} Dashboard
         </h1>
-        <p className="text-sm text-muted-foreground">Live updates & orders</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          View today&apos;s orders, performance, and real-time updates.
+        </p>
       </div>
 
       {/* Clock & Button */}
@@ -72,12 +76,19 @@ export const Header: FC<HeaderProps> = ({ cafeId, setIsOpen, isOpen }) => {
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
-              className={`flex items-center cursor-pointer space-x-2 px-4 py-2 rounded-md text-sm font-medium border transition-all ${
-                isOpen
-                  ? "border-green-400 text-green-600 bg-green-100 hover:bg-green-200"
-                  : "border-red-400 text-red-600 bg-red-100 hover:bg-red-200"
-              }`}
+              className={`relative inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold border transition-all duration-300
+        ${
+          isOpen
+            ? "border-green-400 bg-green-100 text-green-700 dark:bg-green-800/10 dark:text-green-300"
+            : "border-red-400 bg-red-100 text-red-700 dark:bg-red-800/10 dark:text-red-300"
+        }
+        ${
+          isOpen
+            ? "hover:shadow-[0_0_10px_2px_rgba(34,197,94,0.3)] dark:hover:shadow-[0_0_10px_2px_rgba(74,222,128,0.2)]"
+            : "hover:shadow-[0_0_10px_2px_rgba(239,68,68,0.3)] dark:hover:shadow-[0_0_10px_2px_rgba(248,113,113,0.2)]"
+        }`}
             >
+              {/* Pulse dot */}
               <span
                 className={`h-2.5 w-2.5 rounded-full animate-pulse ${
                   isOpen ? "bg-green-500" : "bg-red-500"
@@ -91,18 +102,24 @@ export const Header: FC<HeaderProps> = ({ cafeId, setIsOpen, isOpen }) => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {isOpen ? "Close the café? 🔒" : "Open the café? 🚀"}
+                {isOpen
+                  ? `Close ${cafe?.name || "the café"}? 🔒`
+                  : `Open ${cafe?.name || "the café"}? 🚀`}
               </AlertDialogTitle>
               <AlertDialogDescription className="text-sm text-muted-foreground mt-1">
                 {isOpen
-                  ? "Your café will stop accepting new orders and become invisible to customers. Existing orders will still be processed."
-                  : "Your café will start accepting new orders and show up to hungry customers. Make sure your menu is ready!"}
+                  ? `${
+                      cafe?.name || "The café"
+                    } will stop accepting new orders and will be hidden from customers. Ongoing orders will still be served.`
+                  : `${
+                      cafe?.name || "The café"
+                    } will go live and start accepting orders. Get ready to serve some smiles! 🍽️`}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleToggleStatus}>
-                {isOpen ? "Yes, close it 😴" : "Yes, open it 😎"}
+                {isOpen ? `Yes, close it 😴` : `Yes, open it 😎`}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
