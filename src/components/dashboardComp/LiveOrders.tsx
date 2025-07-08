@@ -3,7 +3,6 @@ import React, { useState, FC } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 
-// NEW: Import the extra icons you need
 import {
   ShoppingCart,
   Clock,
