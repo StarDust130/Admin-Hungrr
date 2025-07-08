@@ -1,28 +1,28 @@
 "use client";
-import React, { useState,  FC,  } from "react";
+import React, { useState, FC } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
 
+// NEW: Import the extra icons you need
 import {
   ShoppingCart,
   Clock,
   Info,
   BadgeCheck,
   Loader2,
-  Utensils,
-  CreditCard,
+  Utensils, // For Dine-in
+  CreditCard, // For Online
   ReceiptText,
+  Wallet, // For Cash
+  ShoppingBag, // For Takeaway
 } from "lucide-react";
 
-// Local Imports (assuming these files exist and are correct)
 import { LiveOrdersProps, Order, OrderStatus } from "./types";
-
-import { formatCurrency,  ORDER_STATUS_CONFIG } from "@/lib/helper";
-
+import { formatCurrency, ORDER_STATUS_CONFIG } from "@/lib/helper";
 import { api } from "@/lib/axios";
 import { cn } from "@/lib/utils";
-import {  formatDistanceToNow } from "date-fns";
 
-// ShadCN UI Component Imports
+// UI Component Imports
 import {
   Select,
   SelectContent,
@@ -52,15 +52,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { OrderDetailsModal } from "../ordersComp/OrderDetailsModal";
 
-
-
-
-
-// ===================================================================================
-//  LIVE ORDERS COMPONENT (PRESENTATIONAL)
-// ===================================================================================
-
-
 export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
   const [submittingOrderId, setSubmittingOrderId] = useState<string | null>(
     null
@@ -68,23 +59,30 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // API calls are now simple and don't need to update local state directly.
+  console.log("LiveOrders component rendered with orders:", orders);
+  
+
+  // This component now relies on a parent to update its state via WebSocket.
+  // The API calls here just trigger the backend event.
   const handleStatusChange = async (
     orderId: string,
     newStatus: OrderStatus
   ) => {
     try {
       await api.patch(`/order/${orderId}/status`, { status: newStatus });
+      // The parent component's WebSocket listener will handle the state update
     } catch (error) {
       console.error("Failed to update order status:", error);
     }
   };
 
-  const handlePaidToggle = async (order: Order) => {
-    if (order.paid || submittingOrderId) return;
-    setSubmittingOrderId(order.id);
+  const handlePaidToggle = async (orderToUpdate: Order) => {
+    if (orderToUpdate.paid || submittingOrderId) return;
+    setSubmittingOrderId(orderToUpdate.id);
     try {
-      await api.patch(`/order/${order.id}/mark-paid`);
+      await api.patch(`/order/${orderToUpdate.id}/mark-paid`);
+      // The parent component's WebSocket listener will update the state,
+      // providing the "source of truth" update.
     } catch (error) {
       console.error("Failed to mark order as paid:", error);
     } finally {
@@ -100,6 +98,7 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
   return (
     <TooltipProvider>
       <Card className="flex flex-col h-[130vh] w-full rounded-2xl bg-background border border-border shadow-sm">
+        {/* Card Header */}
         <div className="px-4 pt-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
@@ -113,6 +112,7 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
           <div className="mt-4 border-b border-border" />
         </div>
 
+        {/* Orders List */}
         <div className="overflow-y-auto px-3 space-y-4 flex-1 min-h-0">
           <AnimatePresence>
             {orders.length > 0 ? (
@@ -121,6 +121,12 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
                   ORDER_STATUS_CONFIG[order.status] ||
                   ORDER_STATUS_CONFIG.pending;
                 const isSubmitting = submittingOrderId === order.id;
+
+                // --- FIX: Conditional Icons ---
+                const OrderTypeIcon =
+                  order.orderType === "takeaway" ? ShoppingBag : Utensils;
+                const PaymentMethodIcon =
+                  order.payment_method === "cash" ? Wallet : CreditCard;
 
                 return (
                   <motion.div
@@ -132,6 +138,7 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
                     transition={{ type: "spring", stiffness: 260, damping: 25 }}
                   >
                     <div className="rounded-lg border border-border shadow-sm hover:shadow-md transition p-3">
+                      {/* Order Header */}
                       <div className="flex justify-between items-start mb-1">
                         <div>
                           <p className="text-sm font-medium text-foreground">
@@ -169,13 +176,16 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
                         </div>
                       </div>
 
+                      {/* Order Info Icons */}
                       <div className="flex flex-wrap justify-between items-center text-xs text-muted-foreground border-t pt-2 mt-2 gap-2">
                         <div className="flex items-center gap-1 capitalize">
-                          <Utensils className="w-3 h-3" />
+                          {/* -- Corrected Icon -- */}
+                          <OrderTypeIcon className="w-3 h-3" />
                           <span>{order.orderType}</span>
                         </div>
                         <div className="flex items-center gap-1 capitalize">
-                          <CreditCard className="w-3 h-3" />
+                          {/* -- Corrected Icon -- */}
+                          <PaymentMethodIcon className="w-3 h-3" />
                           <span>{order.payment_method}</span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -187,6 +197,8 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
                           </span>
                         </div>
                       </div>
+
+                      {/* Order Actions */}
                       <div className="flex items-center justify-between mt-3">
                         <p className="text-sm font-semibold text-foreground">
                           {formatCurrency(order.total_price)}
@@ -291,7 +303,7 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
                 );
               })
             ) : (
-              <div className="text-center text-muted-foreground py-10 text-sm  flex flex-col items-center justify-center">
+              <div className="text-center text-muted-foreground py-10 text-sm flex flex-col items-center justify-center">
                 <ShoppingCart
                   className="mx-auto mb-2"
                   size={28}
