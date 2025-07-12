@@ -19,13 +19,23 @@ export interface OrderItem {
 export interface Order {
   id: number;
   publicId: string;
-  customerName: string;
-  tableNo: number | null;
-  total_price: string;
   created_at: string;
+  total_price: string;
+  customerName?: string;
+  order_items: {
+    quantity: number;
+    item: {
+      name: string;
+      price: string;
+    };
+    variant?: {
+      name: string;
+      price: string;
+    };
+  }[];
   status: OrderStatus;
-  order_items?: OrderItem[];
-}
+  payment_method: PaymentMethod;
+}  
 
 export interface PageInfo {
   currentPage: number;
@@ -40,3 +50,10 @@ export interface Stats {
   averageOrderValue: number;
   pending: number;
 }
+
+
+export enum PaymentMethod {
+  cash,
+  online,
+}
+

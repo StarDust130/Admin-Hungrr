@@ -140,9 +140,23 @@ export const LiveOrders: FC<LiveOrdersProps> = ({ orders }) => {
                       {/* Order Header */}
                       <div className="flex justify-between items-start mb-1">
                         <div>
-                          <p className="text-sm font-medium text-foreground">
+                          <p
+                            className={`text-sm font-medium flex items-center gap-2 ${
+                              order.paid ? "text-green-600" : "text-yellow-600"
+                            }`}
+                          >
                             Table #{order.tableNo}
+                            {order.paid ? (
+                              <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">
+                                Paid <span>💸</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                                Unpaid <span>🕐</span>
+                              </span>
+                            )}
                           </p>
+
                           <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">
                             #{order.publicId}
                           </p>
