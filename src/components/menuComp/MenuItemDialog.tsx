@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, UploadCloud } from "lucide-react";
+import { Loader2, PlusCircle, Trash2, UploadCloud } from "lucide-react";
 import { Category, MenuItem } from "./menu-types";
 import { imagekit, fileToBase64 } from "@/lib/imagekit";
 
@@ -65,7 +65,16 @@ export function MenuItemDialog({
   categories,
   onSave,
 }: MenuItemFormDialogProps) {
-  const [formData, setFormData] = useState<Partial<MenuItem>>({});
+  type MenuItemVariantForm = {
+    id?: number;
+    itemId?: number;
+    name: string;
+    price: string;
+  };
+  
+  const [formData, setFormData] = useState<
+    Omit<Partial<MenuItem>, "variants"> & { variants?: MenuItemVariantForm[] }
+  >({});
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,20 +84,28 @@ export function MenuItemDialog({
   useEffect(() => {
     if (isOpen) {
       setFormData(
-        initialData || {
-          name: "",
-          price: "",
-          is_available: true,
-          isSpecial: false,
-          dietary: "veg",
-          categoryId: categories[0]?.id,
-          cafeId: cafeId ? parseInt(cafeId, 10) : undefined,
-        }
+        initialData
+          ? {
+              ...initialData,
+              price: initialData.price || "",
+              variants: initialData.variants || [],
+            }
+          : {
+              name: "",
+              price: "",
+              is_available: true,
+              isSpecial: false,
+              dietary: "veg",
+              categoryId: categories[0]?.id,
+              cafeId: cafeId ? parseInt(cafeId, 10) : undefined,
+              variants: [],
+            }
       );
       setIsUploading(false);
     }
   }, [isOpen, initialData, categories, cafeId]);
 
+  // ✅ ImageKit Upload Handler
   const handleFileSelect = async (file: File | null) => {
     if (!file) return;
     setIsUploading(true);
@@ -119,7 +136,20 @@ export function MenuItemDialog({
     }
     setIsSaving(true);
     try {
-      const finalData = { ...formData, price: formData.price || "0" };
+      const finalVariants =
+        formData.variants?.filter((v) => v.name?.trim() && v.price !== "") ||
+        [];
+
+      const lowestPrice = finalVariants.length
+        ? Math.min(...finalVariants.map((v) => Number(v.price)))
+        : Number(formData.price || 0);
+
+      const finalData: Partial<MenuItem> = {
+        ...formData,
+        price: lowestPrice.toString(), // ✅ Ensure string type
+        variants: finalVariants,
+      };
+
       await onSave(finalData);
     } catch (error) {
       console.error("Save error", error);
@@ -315,6 +345,76 @@ export function MenuItemDialog({
               <Label htmlFor="isSpecial">
                 Mark as a &quot;Special&quot; 🌟
               </Label>
+            </div>
+            {/* --- Variants Section --- */}
+            <div className="md:col-span-2 space-y-3">
+              <Label>Variants</Label>
+              <div className="flex flex-col space-y-2 max-h-52 overflow-y-auto pr-2">
+                {(formData.variants || []).map((variant, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <Input
+                      placeholder="Variant Name (e.g. Half)"
+                      value={variant.name || ""}
+                      onChange={(e) => {
+                        const updated = [...(formData.variants || [])];
+                        updated[index].name = e.target.value;
+                        setFormData((prev) => ({ ...prev, variants: updated }));
+                      }}
+                      className="w-[40%]"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Price"
+                      value={variant.price || ""}
+                      onChange={(e) => {
+                        const updated = [...(formData.variants || [])];
+                        updated[index].price = e.target.value;
+                        setFormData((prev) => ({ ...prev, variants: updated }));
+                      }}
+                      className="w-[40%]"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        const updated = [...(formData.variants || [])];
+                        updated.splice(index, 1);
+                        const min = updated.length
+                          ? Math.min(...updated.map((v) => Number(v.price)))
+                          : Number(formData.price || 0);
+                        setFormData((prev) => ({
+                          ...prev,
+                          variants: updated,
+                          price: min.toString(),
+                        }));
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="w-fit"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    variants: [
+                      ...(prev.variants || []),
+                      { name: "", price: "" },
+                    ],
+                  }))
+                }
+              >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Variant
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                The lowest variant price will be used as base price.
+              </p>
             </div>
           </div>
 

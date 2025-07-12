@@ -18,6 +18,12 @@ export interface MenuItem {
   categoryId: number;
   cafeId: number;
   dietary: string;
+  variants: {
+    id: number;
+    itemId: number;
+    name: string; // e.g. "Half", "Full", "1kg"
+    price: string;
+  }[];
 }
 
 export interface PageInfo {
