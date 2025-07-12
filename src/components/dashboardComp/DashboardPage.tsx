@@ -44,7 +44,9 @@ const DashboardPage: FC = () => {
     try {
       const [dashboardRes, ordersRes] = await Promise.all([
         fetch(`${API_BASE_URL}/dashboard/${cafeId}/today`),
-        fetch(`${API_BASE_URL}/orders/cafe/${cafeId}?range=today&limit=50`),
+        fetch(
+          `${API_BASE_URL}/orders/cafe/${cafeId}??range=today&limit=10&status=all&live=true`
+        ),
       ]);
 
       if (!dashboardRes.ok || !ordersRes.ok) {
