@@ -30,6 +30,7 @@ export interface DashboardStats {
   orders: Stat;
   avgOrderValue: Stat;
   newCustomers: Stat;
+  repeatOrderPercentage: Stat;
 }
 
 export interface OrderStatusConfig {

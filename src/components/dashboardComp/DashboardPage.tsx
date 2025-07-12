@@ -2,7 +2,12 @@
 "use client";
 import React, { useState, useEffect, FC, useCallback, useRef } from "react";
 import { io, Socket } from "socket.io-client";
-import { DollarSign, ShoppingCart, Users, TrendingUp } from "lucide-react";
+import {
+  DollarSign,
+  ShoppingCart,
+  TrendingUp,
+  Repeat,
+} from "lucide-react";
 import * as Tone from "tone";
 import { Toaster, toast } from "sonner";
 
@@ -11,7 +16,11 @@ import { Order, DashboardStats } from "./types";
 import { Header } from "./Header";
 import { StatCard } from "./StatCard";
 import { LiveOrders } from "./LiveOrders";
-import { formatCurrency, ORDER_STATUS_CONFIG } from "@/lib/helper";
+import {
+  formatCurrency,
+  formatPercentage,
+  ORDER_STATUS_CONFIG,
+} from "@/lib/helper";
 import { DashboardLoadingSkeleton } from "./DashboardLoadingSkeleton";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { AiSuggestions } from "./AiSuggestions";
@@ -20,12 +29,8 @@ import { MostSoldItems } from "./MostSoldItems";
 import { HourlyRevenueChart } from "./HourlyRevenueChart";
 
 // --- Configuration ---
-const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL;
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL;
-
-
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "";
 
 const DashboardPage: FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -36,16 +41,27 @@ const DashboardPage: FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCafeOpen, setIsCafeOpen] = useState<boolean>(true);
+  const [cafeId, setCafeId] = useState<string>("");
   const playerRef = useRef<Tone.Player | null>(null);
 
-  const cafeId = localStorage.getItem("cafeId") ?? "";
+  // Move localStorage access to useEffect to ensure client-side execution
+  useEffect(() => {
+    const id = localStorage.getItem("cafeId") ?? "";
+    setCafeId(id);
+  }, []);
 
   const fetchAllData = useCallback(async () => {
+    if (!cafeId) {
+      setError("Cafe ID is missing.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const [dashboardRes, ordersRes] = await Promise.all([
         fetch(`${API_BASE_URL}/dashboard/${cafeId}/today`),
         fetch(
-          `${API_BASE_URL}/orders/cafe/${cafeId}??range=today&limit=10&status=all&live=true`
+          `${API_BASE_URL}/orders/cafe/${cafeId}?range=today&limit=10&status=all&live=true`
         ),
       ]);
 
@@ -60,43 +76,41 @@ const DashboardPage: FC = () => {
 
       setStats(dashboardData.stats);
       setOrderStatusData(
-        dashboardData.orderStatusData.map((d: any) => ({
+        dashboardData.orderStatusData?.map((d: any) => ({
           ...d,
-          color: ORDER_STATUS_CONFIG[d.name.toLowerCase()]?.hex || "#ccc",
-        }))
+          color: ORDER_STATUS_CONFIG[d.name?.toLowerCase()]?.hex || "#ccc",
+        })) || []
       );
-      setHourlyRevenueData(dashboardData.hourlyRevenueData);
-      setMostSoldItems(dashboardData.mostSoldItems);
-      setLiveOrders(ordersData.orders);
+      setHourlyRevenueData(dashboardData.hourlyRevenueData || []);
+      setMostSoldItems(dashboardData.mostSoldItems || []);
+      setLiveOrders(ordersData.orders || []);
     } catch (err: any) {
       console.error("Error during data fetch:", err.message);
       setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   }, [cafeId]);
 
   useEffect(() => {
-    const initialFetch = async () => {
-      setIsLoading(true);
-      setError(null);
-      await fetchAllData();
-      setIsLoading(false);
-    };
-    initialFetch();
-  }, [fetchAllData]);
+    if (cafeId) {
+      fetchAllData();
+    }
+  }, [cafeId, fetchAllData]);
 
   useEffect(() => {
     if (isLoading || !cafeId) return;
 
     if (!playerRef.current) {
       playerRef.current = new Tone.Player({
-      url: "/soft.mp3",
-      autostart: false,
-      loop: false,
-      volume: -10,
+        url: "/soft.mp3",
+        autostart: false,
+        loop: false,
+        volume: -10,
       }).toDestination();
       playerRef.current
-      .load("/soft.mp3")
-      .catch((err) => console.error("Failed to load sound:", err));
+        .load("/soft.mp3")
+        .catch((err) => console.error("Failed to load sound:", err));
     }
     const player = playerRef.current;
 
@@ -115,7 +129,6 @@ const DashboardPage: FC = () => {
       console.log("Dashboard: New order received");
       if (Tone.context.state !== "running") await Tone.start();
       player.start();
-      // Only add to live list, don't refetch stats yet.
       setLiveOrders((prev) =>
         [newOrder, ...prev].sort(
           (a, b) =>
@@ -126,11 +139,9 @@ const DashboardPage: FC = () => {
 
     socket.on("order_updated", (updatedOrder: Order) => {
       console.log("Dashboard: Order update received");
-      // Only refetch all data if the order is accepted or paid, as this affects stats.
       if (updatedOrder.status === "accepted" || updatedOrder.paid) {
         fetchAllData();
       } else {
-        // Otherwise, just update the live orders list.
         setLiveOrders((prev) =>
           prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o))
         );
@@ -140,7 +151,6 @@ const DashboardPage: FC = () => {
     socket.on("order_cancelled", () => {
       console.log("Dashboard: Order cancellation received");
       toast.info("An order was canceled by the user.");
-      // Refetch all data to update stats and remove the order from the live list.
       fetchAllData();
     });
 
@@ -162,13 +172,15 @@ const DashboardPage: FC = () => {
     );
   }
 
-  if (error) {
+  if (error || !stats) {
     return (
       <div className="min-h-screen p-4 sm:p-6 lg:p-8">
-        <ErrorDisplay message={error}  />
+        <ErrorDisplay message={error || "No data available."} />
       </div>
     );
   }
+
+  console.log(stats, "Dashboard stats data");
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -177,46 +189,44 @@ const DashboardPage: FC = () => {
         <Header isOpen={isCafeOpen} setIsOpen={setIsCafeOpen} cafeId={cafeId} />
         <main className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-100px)] mb-20">
           <div className="xl:col-span-2 space-y-6 h-full overflow-y-auto">
-            {stats && (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <StatCard
-                    title="Total Revenue"
-                    value={formatCurrency(stats.revenue.value)}
-                    icon={DollarSign}
-                    color="#3b82f6"
-                    change={stats.revenue.change}
-                  />
-                  <StatCard
-                    title="Total Orders"
-                    value={String(stats.orders.value)}
-                    icon={ShoppingCart}
-                    color="#10b981"
-                    change={stats.orders.change}
-                  />
-                  <StatCard
-                    title="Avg. Order Value"
-                    value={formatCurrency(stats.avgOrderValue.value)}
-                    icon={TrendingUp}
-                    color="#f59e0b"
-                    change={stats.avgOrderValue.change}
-                  />
-                  <StatCard
-                    title="New Customers"
-                    value={String(stats.newCustomers.value)}
-                    icon={Users}
-                    color="#8b5cf6"
-                    change={stats.newCustomers.change}
-                  />
-                </div>
-                <AiSuggestions cafeId={cafeId} />
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <OrderStatusPieChart data={orderStatusData} />
-                  <MostSoldItems items={mostSoldItems} />
-                </div>
-                <HourlyRevenueChart data={hourlyRevenueData} />
-              </>
-            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                title="Total Revenue"
+                value={formatCurrency(stats.revenue?.value ?? 0)}
+                icon={DollarSign}
+                color="#3b82f6"
+                change={stats.revenue?.change ?? 0}
+              />
+              <StatCard
+                title="Total Orders"
+                value={String(stats.orders?.value ?? 0)}
+                icon={ShoppingCart}
+                color="#10b981"
+                change={stats.orders?.change ?? 0}
+              />
+              <StatCard
+                title="Avg. Order Value"
+                value={formatCurrency(stats.avgOrderValue?.value ?? 0)}
+                icon={TrendingUp}
+                color="#f59e0b"
+                change={stats.avgOrderValue?.change ?? 0}
+              />
+              <StatCard
+                title="Repeat Order %"
+                value={formatPercentage(
+                  stats.repeatOrderPercentage?.value ?? 0
+                )}
+                icon={Repeat}
+                color="#ec4899"
+                change={stats.repeatOrderPercentage?.change ?? 0}
+              />
+            </div>
+            <AiSuggestions cafeId={cafeId} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <OrderStatusPieChart data={orderStatusData} />
+              <MostSoldItems items={mostSoldItems} />
+            </div>
+            <HourlyRevenueChart data={hourlyRevenueData} />
           </div>
           <div className="h-full flex flex-col mb-20">
             <LiveOrders orders={liveOrders} cafeId={cafeId} />
@@ -228,5 +238,3 @@ const DashboardPage: FC = () => {
 };
 
 export default DashboardPage;
-
-

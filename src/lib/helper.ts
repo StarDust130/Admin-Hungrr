@@ -31,3 +31,5 @@ export const formatTime = (dateString: string) =>
       minute: "2-digit",
       hour12: true,
     });
+
+export   const formatPercentage = (value: number) => `${value.toFixed(2)}%`;

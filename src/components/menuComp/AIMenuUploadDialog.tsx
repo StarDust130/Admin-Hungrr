@@ -103,7 +103,7 @@ export function AIMenuUploadDialog({
   };
 
   const renderInitialView = () => (
-    <div className="grid w-full gap-2">
+    <div className="grid w-full  gap-2">
       <Label htmlFor="menu-text">Paste your full menu text below</Label>
       <Textarea
         id="menu-text"
@@ -142,7 +142,7 @@ Shahi Paneer - 400`}
   );
 
   const renderPreviewView = () => (
-    <div className="space-y-4 max-h-[60vh] w-full overflow-y-auto pr-2">
+    <div className="space-y-4  w-full overflow-y-auto pr-2">
       <h3 className="font-semibold text-center text-lg">
         ✨ AI Generated Menu Preview ✨
       </h3>
